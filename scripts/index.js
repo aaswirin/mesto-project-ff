@@ -27,20 +27,14 @@ function addPlace(objectPlace, functionDelete) {
 
 // Удаление карточки
 const deletePlace = function (event) {
-  let placeDelete;
-  let element = event.target;
+  if (event.target === null) return;
 
   // Поискать карточку выше и выше, вдруг враги разметку поменяли
-  while (typeof placeDelete === "undefined" && element.parentElement !== null) {
-    if (element.parentElement.classList.contains('places__item')) {
-      // Нашёл карточку!
-      placeDelete = element.parentElement;
-      placeDelete.remove();                 // Можно удалять!
-    } else {
-      // Буду искать дальше...
-      element = element.parentElement;
-    }
-  }
+  const placeDelete = event.target.closest('li.places__item');
+
+  if (placeDelete === null) return;
+
+  placeDelete.remove();                 // Можно удалять!
 }
 
 // Вывести карточки на страницу
