@@ -1,15 +1,20 @@
-// Заготовка
+/** @module index */
+
+/** Заготовка */
 const cardTemplate = document.querySelector('#card-template').content;
 
-// DOM узлы по потребности
+/** DOM узлы по потребности */
 const placesContainer=document.querySelector('.places__list');     // Место для укладки карт
 
-// Создание карточки
-// -> objectPlace {  Место для создания
-//       name: <Наименование Места>,
-//       link: <URL картинки>,
-//    }
-// -> functionDelete - функция для удаления карточки
+/**
+ * Создание карточки.
+ *
+ * @param {object} objectPlace Место для создания
+ * @param {string} objectPlace.name Наименование Места
+ * @param {string} objectPlace.link URL картинки
+ * @param {function} functionDelete Функция удаления картинки
+ * @returns {HTMLElement} карточка для размещения на странице
+ */
 function addPlace(objectPlace, functionDelete) {
   const newPlace = cardTemplate.querySelector('.places__item').cloneNode(true);
 
@@ -25,7 +30,11 @@ function addPlace(objectPlace, functionDelete) {
   return newPlace;
 }
 
-// Удаление карточки
+/**
+ * Удаление карточки
+ *
+ * @param {Event} event Событие 'click' на кнопке
+ */
 const deletePlace = function (event) {
   if (event.target === null) return;
 
@@ -37,8 +46,13 @@ const deletePlace = function (event) {
   placeDelete.remove();                 // Можно удалять!
 }
 
-// Вывести карточки на страницу
-// -> initCards - массив карточек для создания
+/**
+ * Вывести карточки на страницу
+ *
+ * @param {object[]} initCards Массив описаний карточек
+ * @param {string} initCards.name Наименование Места
+ * @param {string} initCards.link URL картинки
+*/
 function initPlaces(initCards) {
   let newPlace;
   initCards.forEach(function (item) {
