@@ -1,3 +1,8 @@
+/**
+ * Набор карточек для инициализации
+ *
+ * @type {Object[]} Настройки
+ */
 export const initialCards = [
   {
     name: "Архыз",
