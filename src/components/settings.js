@@ -15,6 +15,7 @@ export const settings = {
   // Для окон
   classWindowPopup: '.popup__content',               // Класс для содержимого окон
   classWindowOpen: '.popup_is-opened',               // Класс для показа окна
+  classWindowOpenNotDot: 'popup_is-opened',          // Класс для показа окна (без точки)
   classWindowClose: '.popup_is-animated',            // Класс для закрытия окна
   classElementClose: '.popup__close',                // Класс для кнопки закрытия окна
   classForm: '.popup__form',                         // Класс формы
@@ -57,4 +58,5 @@ export const settings = {
   // Лайк карточки
   classLikeButton: '.card__like-button',             // Класс для кнопки лайка
   classLikeYes: '.card__like-button_is-active',      // Класс для установки лайка
+  classLikeYesNotDot: 'card__like-button_is-active', // Класс для установки лайка (без точки)
 }
