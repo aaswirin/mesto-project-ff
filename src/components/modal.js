@@ -18,6 +18,7 @@ export function verifyEventMouseUp(event, settings) {
  * @returns {boolean} результат проверки
  */
 export function verifyEventKeyDown(event, settings) {
+  console.log(event.target);
   // Поискать клавишу в списке
   return settings.keysClose.findIndex(function (element) {
     return element === event.key;
@@ -40,7 +41,7 @@ export function setModalWindowEventListeners(elementWindow, settings, objListene
   // Обеспечить закрытие по крестику
   elementWindow.querySelector(settings.classElementClose).addEventListener('click',  objListener.close);
   // Для снятия открытого окна по клику вне окна
-  document.addEventListener('mouseup', objListener.closeUp);
+  elementWindow.addEventListener('mouseup', objListener.closeUp);
   // Для снятия открытого окна по клавише
   document.addEventListener('keydown', objListener.closeKey);
 }
