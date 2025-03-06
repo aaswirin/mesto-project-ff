@@ -16,7 +16,7 @@ export const settings = {
   classWindowPopup: '.popup__content',               // Класс для содержимого окон
   classWindowOpen: '.popup_is-opened',               // Класс для показа окна
   classWindowOpenNotDot: 'popup_is-opened',          // Класс для показа окна (без точки)
-  classWindowClose: '.popup_is-animated',            // Класс для закрытия окна
+  classWindowAnimatedNotDot: 'popup_is-animated',    // Класс для анимации
   classElementClose: '.popup__close',                // Класс для кнопки закрытия окна
   classForm: '.popup__form',                         // Класс формы
   keysClose: [                                       // Список клавиш, по которым закрываем окно. Вдруг поменяется?

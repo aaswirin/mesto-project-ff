@@ -1,27 +1,57 @@
 /**
- * Поднятие окна
+ * Проверка на mouseup вне модальном окне
+ *
+ * @param {Event} event Событие 'mouseup' на документе
+ * @param {Object} settings Настройки
+ * @returns {boolean} результат проверки
+ */
+export function verifyEventMouseUp(event, settings) {
+  // На окне клацнули? Если да, то не закрываем!
+  return event.target.closest(settings.classWindowPopup) === null;
+}
+
+/**
+ * Проверка нажатой клавиши на модальном окне
+ *
+ * @param {Event} event Событие 'keydown' на документе
+ * @param {Object} settings Настройки
+ * @returns {boolean} результат проверки
+ */
+export function verifyEventKeyDown(event, settings) {
+  // Поискать клавишу в списке
+  return settings.keysClose.findIndex(function (element) {
+    return element === event.key;
+  }) !== -1;
+}
+
+/**
+ * Инициализация модального окна
  *
  * @param {HTMLElement} elementWindow Окно для поднятия
- * @param {HTMLElement} elementForm Форма
  * @param {Object} settings Настройки
  * @param {Object} objListener Слушатели
  * @param {function} objListener.close Закрытие по клику
- * @param {function} objListener.submit Отправка
  * @param {function} objListener.closeUp Закрытие по клику вне окна
  * @param {function} objListener.closeKey Закрытие по клавише
  */
-export function showPopup(elementWindow, elementForm, settings, objListener) {
-  // Обеспечить закрытие
+export function setModalWindowEventListeners(elementWindow, settings, objListener) {
+  // Обеспечить анимацию
+  elementWindow.classList.add(settings.classWindowAnimatedNotDot);
+  // Обеспечить закрытие по крестику
   elementWindow.querySelector(settings.classElementClose).addEventListener('click',  objListener.close);
-  // Обработка результатов формы
-  if (objListener.submit !== null) {
-    elementForm.addEventListener("submit",objListener.submit);
-  }
   // Для снятия открытого окна по клику вне окна
   document.addEventListener('mouseup', objListener.closeUp);
   // Для снятия открытого окна по клавише
   document.addEventListener('keydown', objListener.closeKey);
+}
 
+/**
+ * Поднятие окна
+ *
+ * @param {HTMLElement} elementWindow Окно для поднятия
+ * @param {Object} settings Настройки
+ */
+export function showPopup(elementWindow, settings) {
   // Показать окно
   elementWindow.classList.add(settings.classWindowOpenNotDot);
 }
@@ -30,23 +60,9 @@ export function showPopup(elementWindow, elementForm, settings, objListener) {
  * Закрытие окна
  *
  * @param {HTMLElement} elementWindow Окно для поднятия
- * @param {HTMLElement} elementForm Форма
  * @param {Object} settings Настройки
- * @param {Object} objListener Слушатели
- * @param {function} objListener.close Закрытие по клику
- * @param {function} objListener.submit Отправка
- * @param {function} objListener.closeUp Закрытие по клику вне окна
- * @param {function} objListener.closeKey Закрытие по клавише */
-export function closePopup(elementWindow, elementForm, settings, objListener) {
+ */
+export function closePopup(elementWindow, settings) {
   // Закрыть окно
   elementWindow.classList.remove(settings.classWindowOpenNotDot);
-
-  // ... и снять слушатели, что б лишнего электричества не тратить!
-  elementWindow.querySelector(settings.classElementClose).removeEventListener('click', objListener.close);
-  if (objListener.submit !== null) {
-    elementForm
-      .removeEventListener("submit", event => objListener.submit(event, elementWindow, settings.bindProfile, settings));
-  }
-  document.removeEventListener('mouseup', objListener.closeUp);
-  document.removeEventListener('keydown', objListener.closeKey);
 }
