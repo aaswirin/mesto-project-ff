@@ -154,7 +154,7 @@ function openProfile() {
   // Инициализировать поля
   initPopup(windowProfile, settings.bindProfile);
 
-  showPopup(windowProfile, settings);
+  showPopup(windowProfile, settings, closeProfileKey);
 }
 
 /**
@@ -180,7 +180,7 @@ function closeProfileKey(event) {
  *
  */
 function closeProfile() {
-  closePopup(windowProfile, settings);
+  closePopup(windowProfile, settings, closeProfileKey);
 
   // ... и почистить форму
   clearForm(windowProfile);
@@ -195,7 +195,7 @@ function submitProfile(event) {
   event.preventDefault();
 
   editProfile(windowProfile, settings.bindProfile)
-  closePopup(windowProfile, settings);
+  closePopup(windowProfile, settings, closeProfileKey);
   // ... и почистить форму
   clearForm(windowProfile);
 }
@@ -205,7 +205,7 @@ function submitProfile(event) {
  *
  */
 function openAddCard() {
-  showPopup(windowCard, settings);
+  showPopup(windowCard, settings, closeAddCardKey);
 }
 
 /**
@@ -231,7 +231,7 @@ function closeAddCardKey(event) {
  *
  */
 function closeAddCard() {
-  closePopup(windowCard, settings);
+  closePopup(windowCard, settings, closeAddCardKey);
 
   // ... и почистить форму
   clearForm(windowCard);
@@ -246,7 +246,7 @@ function submitCard(event) {
   event.preventDefault();
 
   createNewCard(windowCard, settings.bindCard);
-  closePopup(windowCard, settings);
+  closePopup(windowCard, settings, closeAddCardKey);
   // ... и почистить форму
   clearForm(windowCard);
 }
@@ -261,7 +261,7 @@ const  onOpenPreview = function(event) {
   // Инициализировать картинку
   initImage(windowImage, event.target);
 
-  showPopup(windowImage, settings);
+  showPopup(windowImage, settings, closeOpenPreviewKey);
 }
 
 /**
@@ -287,7 +287,7 @@ function closeOpenPreviewKey(event) {
  *
  */
 function closeOpenPreview() {
-  closePopup(windowImage, settings);
+  closePopup(windowImage, settings, closeOpenPreviewKey);
 }
 
 // Стартуем
@@ -304,7 +304,6 @@ formProfile.addEventListener("submit", submitProfile);
 const objListenerProfile = {
   close: closeProfile,
   closeUp: closeProfileUp,
-  closeKey: closeProfileKey,
 };
 setModalWindowEventListeners(windowProfile, settings, objListenerProfile);
 
@@ -320,7 +319,6 @@ formCard.addEventListener("submit", submitCard);
 const objListenerAddCard = {
   close: closeAddCard,
   closeUp: closeAddCardUp,
-  closeKey: closeAddCardKey,
 };
 setModalWindowEventListeners(windowCard, settings, objListenerAddCard);
 
@@ -333,7 +331,6 @@ setModalWindowEventListeners(windowCard, settings, objListenerAddCard);
 const objListenerOpenPreview = {
   close: closeOpenPreview,
   closeUp: closeOpenPreviewUp,
-  closeKey: closeOpenPreviewKey,
 }
 setModalWindowEventListeners(windowImage, settings, objListenerOpenPreview);
 
