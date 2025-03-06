@@ -18,7 +18,6 @@ export function verifyEventMouseUp(event, settings) {
  * @returns {boolean} результат проверки
  */
 export function verifyEventKeyDown(event, settings) {
-  console.log(event.target);
   // Поискать клавишу в списке
   return settings.keysClose.findIndex(function (element) {
     return element === event.key;
