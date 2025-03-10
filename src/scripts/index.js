@@ -148,6 +148,30 @@ function createNewCard(windowCard,bindFields) {
  */
 
 /**
+ * Закрывашка для всех окон
+ *
+ * @param {HTMLElement} elementWindow Окно формы
+ * @param {function} functionCloseKey Функция для закрытия окна по клавише
+ */
+function closeWindow(elementWindow, functionCloseKey) {
+  closePopup(elementWindow, settings, functionCloseKey);
+
+  // ... и почистить форму
+  clearForm(elementWindow);
+}
+
+/**
+ * Закрывашка для всех окон клику вне окна
+ *
+ * @param {Event} event Событие 'mouseup'
+ * @param {HTMLElement} elementWindow Окно формы
+ * @param {function} functionCloseKey Функция для закрытия окна по клавише
+ */
+function closeWindowMouseUp(event, elementWindow, functionCloseKey) {
+  if (verifyEventMouseUp(event, settings)) closeWindow(elementWindow, functionCloseKey);
+}
+
+/**
  * Запуск окна "Редактировать профиль"
  */
 function openProfile() {
@@ -158,32 +182,12 @@ function openProfile() {
 }
 
 /**
- * Закрыть окно "Редактировать профиль" по клику вне окна
- *
- * @param {Event} event Событие 'mouseup'
- */
-function closeProfileUp(event) {
-  if (verifyEventMouseUp(event, settings)) closeProfile(event);
-}
-
-/**
  * Закрыть окно "Редактировать профиль" по клавише
  *
  * @param {Event} event Событие 'keydown'
  */
 function closeProfileKey(event) {
-  if (verifyEventKeyDown(event, settings)) closeProfile(event);
-}
-
-/**
- * Закрыть окно "Редактировать профиль"
- *
- */
-function closeProfile() {
-  closePopup(windowProfile, settings, closeProfileKey);
-
-  // ... и почистить форму
-  clearForm(windowProfile);
+  if (verifyEventKeyDown(event, settings)) closeWindow(windowProfile, closeProfileKey);
 }
 
 /**
@@ -209,32 +213,12 @@ function openAddCard() {
 }
 
 /**
- * Закрыть окно "Добавить карточку" по клику вне окна
- *
- * @param {Event} event Событие 'mouseup'
- */
-function closeAddCardUp(event) {
-  if (verifyEventMouseUp(event, settings)) closeAddCard(event);
-}
-
-/**
  * Закрыть окно "Добавить карточку" по клавише
  *
  * @param {Event} event Событие 'keydown' на кнопке 'Лайк'
  */
 function closeAddCardKey(event) {
-  if (verifyEventKeyDown(event, settings)) closeAddCard(event);
-}
-
-/**
- * Закрыть окно "Добавить карточку"
- *
- */
-function closeAddCard() {
-  closePopup(windowCard, settings, closeAddCardKey);
-
-  // ... и почистить форму
-  clearForm(windowCard);
+  if (verifyEventKeyDown(event, settings)) closeWindow(windowCard, closeAddCardKey);
 }
 
 /**
@@ -265,74 +249,43 @@ const  onOpenPreview = function(event) {
 }
 
 /**
- * Закрыть окно "Добавить карточку" по клику вне окна
- *
- * @param {Event} event Событие 'mouseup'
- */
-function closeOpenPreviewUp(event) {
-  if (verifyEventMouseUp(event, settings)) closeOpenPreview(event);
-}
-
-/**
  * Закрыть окно "Добавить карточку" по клавише
  *
  * @param {Event} event Событие 'keydown'
  */
 function closeOpenPreviewKey(event) {
-  if (verifyEventKeyDown(event, settings)) closeOpenPreview(event);
-}
-
-/**
- * Закрыть окно "Показ картинки"
- *
- */
-function closeOpenPreview() {
-  closePopup(windowImage, settings, closeOpenPreviewKey);
+  if (verifyEventKeyDown(event, settings)) closeWindow(windowImage, closeOpenPreviewKey);
 }
 
 // Стартуем
-// 1. Инициализация модального окна
-//    а. Окно "Редактировать профиль"
-// Обработка результатов формы
-formProfile.addEventListener("submit", submitProfile);
-
 /**
  * callback'и для окна "Редактировать профиль"
  *
  * @type {object} callback'и для окна "Редактировать профиль"
  */
-const objListenerProfile = {
-  close: closeProfile,
-  closeUp: closeProfileUp,
+const objListener = {
+  close: closeWindow,
+  closeUp: closeWindowMouseUp,
 };
-setModalWindowEventListeners(windowProfile, settings, objListenerProfile);
+
+// 1. Инициализация модального окна
+//    а. Окно "Редактировать профиль"
+// Обработка результатов формы
+formProfile.addEventListener("submit", submitProfile);
+
+objListener.closeKey = closeProfileKey;
+setModalWindowEventListeners(windowProfile, settings, objListener);
 
 //    б. Окно "Добавить карточку"
 // Обработка результатов формы
 formCard.addEventListener("submit", submitCard);
 
-/**
- * callback'и для окна "Добавить карточку"
- *
- * @type {object} callback'и для окна "Добавить карточку"
- */
-const objListenerAddCard = {
-  close: closeAddCard,
-  closeUp: closeAddCardUp,
-};
-setModalWindowEventListeners(windowCard, settings, objListenerAddCard);
+objListener.closeKey = closeAddCardKey;
+setModalWindowEventListeners(windowCard, settings, objListener);
 
 //    в. Окно "Показ картинки"
-/**
- * callback'и для окна "Показ картинки в отдельном окне"
- *
- * @type {object} callback'и для окна "Показ картинки в отдельном окне"
- */
-const objListenerOpenPreview = {
-  close: closeOpenPreview,
-  closeUp: closeOpenPreviewUp,
-}
-setModalWindowEventListeners(windowImage, settings, objListenerOpenPreview);
+objListener.closeKey =  closeOpenPreviewKey;
+setModalWindowEventListeners(windowImage, settings, objListener);
 
 // 2. Вывести карточки на страницу
 const objParam = {

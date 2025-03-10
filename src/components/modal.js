@@ -32,14 +32,17 @@ export function verifyEventKeyDown(event, settings) {
  * @param {Object} objListener Слушатели
  * @param {function} objListener.close Закрытие по клику
  * @param {function} objListener.closeUp Закрытие по клику вне окна
+ * @param {function} objListener.closeUpKey Закрытие по клавише
  */
 export function setModalWindowEventListeners(elementWindow, settings, objListener) {
   // Обеспечить анимацию
   elementWindow.classList.add(settings.classWindowAnimatedNotDot);
   // Обеспечить закрытие по крестику
-  elementWindow.querySelector(settings.classElementClose).addEventListener('click',  objListener.close);
+  elementWindow.querySelector(settings.classElementClose)
+    .addEventListener('click',  () => objListener.close(elementWindow, objListener.closeUpKey));
   // Для снятия открытого окна по клику вне окна
-  elementWindow.addEventListener('mouseup', objListener.closeUp);
+  elementWindow
+    .addEventListener('mouseup', event => objListener.closeUp(event, elementWindow, objListener.closeUpKey));
 }
 
 /**
@@ -47,13 +50,13 @@ export function setModalWindowEventListeners(elementWindow, settings, objListene
  *
  * @param {HTMLElement} elementWindow Окно для поднятия
  * @param {Object} settings Настройки
- * @param {function} closeKey
+ * @param {function} functionCloseKey Функция для снятия окна по клавише
  */
-export function showPopup(elementWindow, settings, closeKey) {
+export function showPopup(elementWindow, settings, functionCloseKey) {
   // Показать окно
   elementWindow.classList.add(settings.classWindowOpenNotDot);
   // Для снятия открытого окна по клавише
-  document.addEventListener('keydown', closeKey);
+  document.addEventListener('keydown', functionCloseKey);
 }
 
 /**
