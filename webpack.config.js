@@ -26,7 +26,7 @@ module.exports = {
         exclude: /node_modules/,                                 // Исключает папку node_modules, файлы в ней обрабатывать не нужно
       },
       {                                                          // Объект правил для обработки файлов
-        test: /\.(png|svg|jpg|gif|woff(2)?|eot|ttf|otf)$/,       // Регулярное выражение, которое ищет все файлы с такими расширениями
+        test: /\.(png|svg|jpg|gif|woff(2)?|eot|ttf|otf|ico)$/,       // Регулярное выражение, которое ищет все файлы с такими расширениями
         type: 'asset/resource',
       },
       {
