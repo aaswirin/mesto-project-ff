@@ -1,0 +1,13 @@
+.popup__button-inactive {
+  color: #000000;
+  background-color: inherit;
+  border: 1px solid #000000;
+  opacity: 20%;
+}
+
+.popup__button-inactive:hover {
+  background-color: inherit;
+  cursor: not-allowed;
+  cursor: -moz-not-allowed;
+  cursor: -webkit-not-allowed;
+}

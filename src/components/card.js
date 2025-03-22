@@ -1,10 +1,16 @@
+/*
+ Карточки
+ */
+
+
 /**
  * Создание карточки.
  *
  * @param {Object} objectPlace Место для создания
  * @param {string} objectPlace.name Наименование Места
  * @param {string} objectPlace.link URL картинки
- * @param {onDeleteCard} onDeleteCard Функция удаления картинки
+ * @param {string} objectPlace[_id] Id картинки в URL
+ * @param {onDeleteCard} onDeleteCard Функция удаления карты
  * @param {function} onOpenPreview Функция показа картинки
  * @param {onLikeCard} onLikeCard Функция лайка
  * @param {DocumentFragment} cardTemplate Заготовка
@@ -24,23 +30,27 @@ function createCard(objectPlace, cardTemplate, settings,
   // Подпись
   newPlace.querySelector(settings.classCardTitle).textContent = objectPlace.name;
   // Кнопка Удалить
-  newPlace.querySelector(settings.classCardDeleteButton)
-          .addEventListener('click', event => onDeleteCard(event, newPlace));
+  const elementCardDeleteButton = newPlace.querySelector(settings.classCardDeleteButton);
+  if (objectPlace.owner['_id'] === settings.apiIdUser) {  // Моя карта, могу и удалить
+    elementCardDeleteButton.addEventListener('click', () => onDeleteCard(newPlace, objectPlace['_id']));
+  } else {                                                // Чужая карта, удалять ни-ни
+    elementCardDeleteButton.remove();
+  }
   // Лайк карточки
   newPlace.querySelector(settings.classLikeButton)
-          .addEventListener('click', event => onLikeCard(event, settings));
-
+    .addEventListener('click', event => onLikeCard(event, settings));
+  // Количество лайков
+  console.log(objectPlace)
+  newPlace.querySelector(settings.classLikesCount).textContent = objectPlace.likes.length;
   return newPlace;
 }
 
 /**
  * Удаление карточки
  *
- * @callback onDeleteCard
- * @param {Event} event Событие 'click' на кнопке
- * @param {HTMLElement} cardDelete Настройки
+ * @param {HTMLElement} cardDelete Карта для удаления
  */
-const onDeleteCard = function (event, cardDelete) {
+export function removeCard(cardDelete) {
   if (cardDelete === null) return;
 
   cardDelete.remove();                 // Можно удалять!
@@ -48,14 +58,11 @@ const onDeleteCard = function (event, cardDelete) {
 
 /**
  * Поставить/снять лайк картинки
- * @callback onLikeCard
- * @param {Event} event Событие 'click' на кнопке
+ * @param {HTMLElement} elementLike Кнопка лайка
  * @param {Object} settings Настройки
  */
-const onLikeCard = function (event, settings) {
-  if (event.target === null) return;
-
-  event.target.classList.toggle(settings.classLikeYesNotDot);
+export function likeCard (elementLike, settings) {
+  elementLike.classList.toggle(settings.classLikeYesNotDot);
 }
 
 /**
@@ -68,11 +75,17 @@ const onLikeCard = function (event, settings) {
  * @param {boolean} addToBegin Создавать карты в начале
  * @param {DocumentFragment} cardTemplate Заготовка
  * @param {Element} placesContainer Место для укладки карт
- * @param {onOpenPreview} onOpenPreview
- *
+ * @param {onOpenPreview} onOpenPreview Функция для просмотра изображения
+ * @param {onDeleteCard} onDeleteCard Функция для удаления карты
+ * @param {onLikeCard} onLikeCard Функция для постановки/снятия лайка
  */
 export function initPlaces(initCards, settings, addToBegin,
-                           {cardTemplate, placesContainer, onOpenPreview} = {}) {
+                           {cardTemplate,
+                            placesContainer,
+                            onOpenPreview,
+                            onDeleteCard,
+                            onLikeCard,
+                           } = {}) {
   const objFunction = {
     onDeleteCard,
     onOpenPreview,
