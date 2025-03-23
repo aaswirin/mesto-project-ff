@@ -11,14 +11,19 @@ import {showPopup, closePopup, verifyEventMouseUp, verifyEventKeyDown, setModalW
 // Валидация
 import {enableValidation, clearValidation, buttonSetState} from '../components/validation.js';
 // API
-import {getProfileAndCard, setProfile, setCard, deleteCard} from '../components/api.js';
+import {getProfileAndCard, setProfile, setCard, deleteCard, setLike, deleteLike, updateAvatar} from '../components/api.js';
 
 
 /** Заготовка */
 const cardTemplate = document.querySelector(settings.idTemplate).content;
 
 /** DOM узлы по потребности */
-const placesContainer = document.querySelector(settings.classPlacesList);       // Место для укладки карт
+const placesContainer = document.querySelector(settings.classPlacesList);      // Место для укладки карт
+
+console.log(settings, settings.classWindowEditAvatar);
+const windowAvatar = document.querySelector(settings.classWindowEditAvatar);   // Окно "Редактировать аватар"
+const formAvatar = windowAvatar.querySelector(settings.classForm);             // Форма "Редактировать аватар"
+const buttonAvatar = formAvatar.querySelector(settings.classSubmitButton);     // Кнопка "Редактировать аватар"
 
 const windowProfile = document.querySelector(settings.classWindowEditProfile);  // Окно "Редактировать профиль"
 const formProfile = windowProfile.querySelector(settings.classForm);            // Форма "Редактировать профиль"
@@ -31,8 +36,11 @@ const buttonCard = formCard.querySelector(settings.classSubmitButton);          
 const windowImage = document.querySelector(settings.classWindowViewImage);      // Окно "Показать картинку"
 const viewImage= windowImage.querySelector(settings.classViewImage);            // Изображение на форме "Показать картинку"
 
+// Редактировать аватар
+document.querySelector(settings.classButtonEditAvatar).addEventListener('click', openEditAvatar);
+
 // Редактировать профиль
-document.querySelector(settings.classButtonEditProfile).addEventListener('click', openProfile);
+document.querySelector(settings.classButtonEditProfile).addEventListener('click', openEditProfile);
 
 // Добавление карточки
 document.querySelector(settings.classButtonAddCard).addEventListener('click', openAddCard);
@@ -128,7 +136,9 @@ function editProfile(data, result, bindFields) {
     else value = data['error'];           // Ошибка при загрузке
 
     if (element.typeElement === 'text') htmlElement.textContent = value;
-    else if (element.typeElement === 'image') htmlElement.setAttribute('src', value);
+    else if (element.typeElement === 'image') {
+      htmlElement.setAttribute('style', `background-image: url(${value});`);
+    }
   });
 }
 
@@ -176,9 +186,54 @@ function closeWindowMouseUp(event, elementWindow, functionCloseKey) {
 }
 
 /**
+ * Запуск окна "Редактировать аватар"
+ */
+function openEditAvatar() {
+  clearValidation(formAvatar, buttonAvatar, settings);
+
+  buttonSetState(buttonAvatar, true, settings);
+
+  showPopup(windowAvatar, settings, closeEditAvatarKey);
+}
+
+/**
+ * Закрыть окно "Редактировать аватар" по клавише
+ *
+ * @param {Event} event Событие 'keydown'
+ */
+function closeEditAvatarKey(event) {
+  if (verifyEventKeyDown(event, settings)) closeWindow(windowAvatar, closeEditAvatarKey);
+}
+
+/**
+ * Обработка формы "Редактировать аватар"
+ *
+ * @param {Event} event Событие 'submit'
+ */
+function submitAvatar(event) {
+  event.preventDefault();
+
+  // Отправить в API
+  const nameForm = findForm(windowAvatar);
+  if (nameForm === '') return;
+
+  // Из формы в API по настройке
+  const data = {};
+  settings.bindAvatar.forEach(function (element) {
+    data[element.name] = document.forms[nameForm].elements[element.nameForm].value
+  });
+  console.log('submitAvatar', data);
+  updateAvatar(onEditAvatarAPI, data, settings);
+
+  closePopup(windowAvatar, settings, closeEditAvatarKey);
+  // ... и почистить форму
+  clearForm(windowAvatar);
+}
+
+/**
  * Запуск окна "Редактировать профиль"
  */
-function openProfile() {
+function openEditProfile() {
   // Инициализировать поля
   initPopup(windowProfile, settings.bindProfile);
 
@@ -287,11 +342,23 @@ function onDeleteCard(elementPlace, idCard) {
  * Поставить/снять лайк картинки
  * @callback onLikeCard
  * @param {Event} event Событие 'click' на кнопке
+ * @param {String} idCard Id карты
  * @param {Object} settings Настройки
  */
-const onLikeCard = function (event, settings) {
+const onLikeCard = function (event, idCard, settings) {
   if (event.target === null) return;
-  likeCard (event.target, settings)
+
+  const data = {
+    id: idCard,
+    elementLike: event.target,
+  };
+  // Если лайк есть, то его надо снять, иначе поставить
+  console.log('onLikeCard', event.target);
+  if (event.target.classList.contains(settings.classLikeYesNotDot)) {
+    deleteLike(onLikeAPI, data, settings);
+  } else {
+    setLike(onLikeAPI, data, settings);
+  }
 }
 
 /**
@@ -385,6 +452,43 @@ function onDeleteCardAPI(result, data, extraData) {
   removeCard(extraData.elementPlace);
 }
 
+/**
+ * Обработка установки/снятия лайка с Карты через API
+ *
+ * @callback onLikeAPI
+ * @param {Boolean} result результат запроса
+ * @param {Object} data Данные запроса
+ * @param {String} data.error Ошибка при result = false
+ * @param {String} data.name Имя карты
+ * @param {String} data.link URL картинки карты
+ * @param {Array} data.likes Лайки на карте
+ * @param {Object} extraData Дополнительные данные
+ * @param {HTMLElement} extraData.element Кнопка лайка
+ * */
+function onLikeAPI(result, data, extraData) {
+  // Количество лайков
+  extraData.elementLike.parentElement.querySelector(settings.classLikesCount)
+           .textContent = data.likes.length;
+  likeCard (extraData.elementLike, settings);
+}
+
+/**
+ * Обработка обновления аватара через API
+ *
+ * @callback onEditAvatarAPI
+ * @param {Boolean} result результат запроса
+ * @param {Object} data Данные запроса
+ * @param {String} data.error Ошибка при result = false
+ * @param {String} data.name Имя карты
+ * @param {String} data.link URL картинки карты
+ * @param {Array} data.likes Лайки на карте
+ * @param {Object} extraData Дополнительные данные
+ * @param {HTMLElement} extraData.element Кнопка лайка
+ * */
+function onEditAvatarAPI(result, data, extraData) {
+  editProfile(data, result, settings.bindProfile);
+}
+
 // Стартуем
 /**
  * callback'и для окна "Редактировать профиль"
@@ -430,6 +534,14 @@ setModalWindowEventListeners(windowCard, settings, objListener);
 //    в. Окно "Показ картинки"
 objListener.closeKey =  closeOpenPreviewKey;
 setModalWindowEventListeners(windowImage, settings, objListener);
+
+//    г. Окно "Обновить аватар"
+// Обработка результатов формы
+formAvatar.addEventListener("submit", submitAvatar);
+
+objListener.closeKey = closeEditAvatarKey;
+setModalWindowEventListeners(windowAvatar, settings, objListener);
+
 
 // 3. Инициализация валидации
 enableValidation(settings);

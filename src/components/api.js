@@ -2,6 +2,8 @@
  Общение с API
  */
 
+import {settings} from "./settings";
+
 /**
  * Обратиться к API
  *
@@ -92,8 +94,8 @@ export function setProfile(onSetProfileAPI, data, settings) {
  * Отправить в API новую карту
  *
  * @param {onSetCardAPI} onSetCardAPI Функция обработки результатов отправки карты
- * @param {Object} data Данные профиля
- * @param {String} data.name Имя профиля
+ * @param {Object} data Данные карты
+ * @param {String} data.name Имя карты
  * @param {String} data.link URL карты
  * @param {Object} settings Настройки
  */
@@ -147,7 +149,7 @@ export function deleteCard(onDeleteCardAPI, data, settings) {
  * @param {onSetLikeAPI} onSetLikeAPI Функция обработки результатов удаления карты
  * @param {Object} data Данные карты
  * @param {String} data.id Id карты
- * @param {HTMLElement} data.element Карта для лайка
+ * @param {HTMLElement} data.element Карта лайка
  * @param {Object} settings Настройки
  */
 export function setLike(onSetLikeAPI, data, settings) {
@@ -187,4 +189,31 @@ export function deleteLike(onDeleteLikeAPI, data, settings) {
     onDeleteLikeAPI
   ];
   callAPI(promiseAll, callbacks, data, settings);
+}
+
+/**
+ * Обновить аватар в API
+ *
+ * @param {onEditAvatarAPI} onEditAvatarAPI Функция обработки результатов обновления аватара
+ * @param {Object} data Данные аватара
+ * @param {String} data.link URL аватара
+ * @param {Object} settings Настройки
+ */
+export function updateAvatar(onEditAvatarAPI, data, settings) {
+  const promiseAll = [
+    fetch(`${settings.apiURL}${settings.apiIdGroup}/${settings.methodAvatar}`, {
+      method: 'PATCH',
+      headers: {
+        authorization: settings.apiToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        avatar: data.link,
+      })
+    })
+  ]
+  const callbacks = [
+    onEditAvatarAPI
+  ];
+  callAPI(promiseAll, callbacks, null, settings);
 }

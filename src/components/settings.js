@@ -25,6 +25,16 @@ export const settings = {
     'Escape',
     //'F10',
   ],
+  // Редактировать аватар
+  classButtonEditAvatar: '.profile__image',          // Класс для кнопки "Редактировать аватар"
+  classWindowEditAvatar: '.popup_edit-avatar',       // Класс для окна "Редактировать профиль"
+  nameFormEditAvatar: 'edit-avatar',                 // Имя формы "Редактировать профиль"
+  bindAvatar: [                                      // Связки полей на форме и на странице
+    {
+      name: 'link',
+      nameForm: 'link-avatar',
+    },
+  ],
   // Редактировать профиль
   classButtonEditProfile: '.profile__edit-button',   // Класс для кнопки "Редактировать профиль"
   classWindowEditProfile: '.popup_type_edit',        // Класс для окна "Редактировать профиль"
@@ -85,4 +95,5 @@ export const settings = {
   methodProfile: 'users/me',                                       // Метод API для профиля
   methodCard: 'cards',                                             // Метод API для карт
   methodLike: 'cards/likes',                                       // Метод API для лайков
+  methodAvatar: 'users/me/avatar',                                 // Метод API для обновления аватара
 }

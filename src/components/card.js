@@ -38,9 +38,8 @@ function createCard(objectPlace, cardTemplate, settings,
   }
   // Лайк карточки
   newPlace.querySelector(settings.classLikeButton)
-    .addEventListener('click', event => onLikeCard(event, settings));
+    .addEventListener('click', event => onLikeCard(event, objectPlace['_id'], settings));
   // Количество лайков
-  console.log(objectPlace)
   newPlace.querySelector(settings.classLikesCount).textContent = objectPlace.likes.length;
   return newPlace;
 }
