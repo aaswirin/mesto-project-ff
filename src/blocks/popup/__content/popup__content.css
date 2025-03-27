@@ -9,6 +9,17 @@
   padding: 34px 36px;
 }
 
+.popup__content-message {
+  max-width: 430px;
+  width: 100%;
+  min-height: 0;
+  background-color: #fff;
+  border-radius: 10px;
+  position: relative;
+  box-sizing: border-box;
+  padding: 34px 36px;
+}
+
 @media screen and (max-width: 568px) {
   .popup__content {
     width: 100%;

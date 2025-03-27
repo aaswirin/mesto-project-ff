@@ -32,6 +32,9 @@ export function clearValidation(elementForm, elementButton, settings) {
 
   // Переключить кнопку
   toggleStateButton(listInput, elementButton, settings);
+  // Убрать показ загрузки
+  elementButton.querySelector(settings.classSubmitLabel).textContent = "Сохранить";
+  elementButton.querySelector(settings.classSpinner).classList.remove(settings.classSpinnerVisible);
 }
 
 /**

@@ -2,10 +2,12 @@
  Главная, отсюда всё и начинается
  */
 
-import '../pages/index.css';                                                  // Импорт главного файла стилей
-
-import {settings} from '../components/settings.js';                           // Настройки проекта
-import {initPlaces, likeCard, removeCard} from '../components/card.js';                             // Функция для создания карточек при инициализации
+// Импорт главного файла стилей
+import '../pages/index.css';
+// Настройки проекта
+import {settings} from '../components/settings.js';
+// Функция для создания карт при инициализации
+import {initPlaces, likeCard, removeCard, initialLike} from '../components/card.js';
 // Обработка окон
 import {showPopup, closePopup, verifyEventMouseUp, verifyEventKeyDown, setModalWindowEventListeners} from '../components/modal.js';
 // Валидация
@@ -13,14 +15,12 @@ import {enableValidation, clearValidation, buttonSetState} from '../components/v
 // API
 import {getProfileAndCard, setProfile, setCard, deleteCard, setLike, deleteLike, updateAvatar} from '../components/api.js';
 
-
 /** Заготовка */
 const cardTemplate = document.querySelector(settings.idTemplate).content;
 
 /** DOM узлы по потребности */
 const placesContainer = document.querySelector(settings.classPlacesList);      // Место для укладки карт
 
-console.log(settings, settings.classWindowEditAvatar);
 const windowAvatar = document.querySelector(settings.classWindowEditAvatar);   // Окно "Редактировать аватар"
 const formAvatar = windowAvatar.querySelector(settings.classForm);             // Форма "Редактировать аватар"
 const buttonAvatar = formAvatar.querySelector(settings.classSubmitButton);     // Кнопка "Редактировать аватар"
@@ -29,12 +29,17 @@ const windowProfile = document.querySelector(settings.classWindowEditProfile);  
 const formProfile = windowProfile.querySelector(settings.classForm);            // Форма "Редактировать профиль"
 const buttonProfile = formProfile.querySelector(settings.classSubmitButton);    // Кнопка "Редактировать профиль"
 
-const windowCard = document.querySelector(settings.classWindowAddCard);         // Окно "Добавить карточку"
-const formCard = windowCard.querySelector(settings.classForm);                  // Форма "Добавить карточку"
-const buttonCard = formCard.querySelector(settings.classSubmitButton);          // Кнопка "Добавить карточку"
+const windowCard = document.querySelector(settings.classWindowAddCard);         // Окно "Добавить карту"
+const formCard = windowCard.querySelector(settings.classForm);                  // Форма "Добавить карту"
+const buttonCard = formCard.querySelector(settings.classSubmitButton);          // Кнопка "Добавить карту"
 
 const windowImage = document.querySelector(settings.classWindowViewImage);      // Окно "Показать картинку"
 const viewImage= windowImage.querySelector(settings.classViewImage);            // Изображение на форме "Показать картинку"
+
+const windowMessage = document.querySelector(settings.classWindowMessage);       // Окно "Всякие сообщения"
+const captionMessage= windowMessage.querySelector(settings.classCaptionMessage); // Заголовок окна "Всякие сообщения"
+const textMessage= windowMessage.querySelector(settings.classTextMessage);       // Текст окна "Всякие сообщения"
+const buttonMessage = windowMessage.querySelector(settings.classSubmitButton);   // Кнопка окна "Всякие сообщения"
 
 // Редактировать аватар
 document.querySelector(settings.classButtonEditAvatar).addEventListener('click', openEditAvatar);
@@ -42,7 +47,7 @@ document.querySelector(settings.classButtonEditAvatar).addEventListener('click',
 // Редактировать профиль
 document.querySelector(settings.classButtonEditProfile).addEventListener('click', openEditProfile);
 
-// Добавление карточки
+// Добавление карту
 document.querySelector(settings.classButtonAddCard).addEventListener('click', openAddCard);
 
 
@@ -91,11 +96,11 @@ function initPopup(elementWindow, bindFields) {
  * @param {HTMLElement} elementImages Картинка на странице
  */
 function initImage(elementWindow, elementImages) {
-  // Напихать в окно всё из карточки
+  // Напихать в окно всё из карты
   viewImage.setAttribute('src', elementImages.getAttribute('src'));
   viewImage.setAttribute('alt', elementImages.getAttribute('alt'));
 
-  // Поискать карточку выше и выше, вдруг враги разметку поменяли
+  // Поискать карту выше и выше, вдруг враги разметку поменяли
   const placeCurrent = elementImages.closest(settings.classListItem);
   if (placeCurrent === null) return;
 
@@ -122,8 +127,8 @@ function clearForm(elementWindow) {
  * @param {Boolean} result Результат запроса в API
  * @param {Object[]} bindFields связки полей
  * @param {string} bindFields.classPage Класс элемента из которого нужно взять значение
- * @param {string} bindFields.nameForm Имя на форме, куда нужно записать значение
  * @param {string} bindFields.nameAPI Имя в объекте из API
+ * @param {string} bindFields.typeElement Тип элемента: 'text' или 'image'
  */
 function editProfile(data, result, bindFields) {
   // Из объекта на страницу по настройке
@@ -131,9 +136,7 @@ function editProfile(data, result, bindFields) {
     const htmlElement = document.querySelector(element.classPage);
     if (htmlElement === null) return;
 
-    let value;
-    if (result) value = data[element.nameAPI]
-    else value = data['error'];           // Ошибка при загрузке
+    const value = data[element.nameAPI]
 
     if (element.typeElement === 'text') htmlElement.textContent = value;
     else if (element.typeElement === 'image') {
@@ -143,14 +146,16 @@ function editProfile(data, result, bindFields) {
 }
 
 /**
- * Результат формы для добавления карточки на страницу
+ * Результат формы для добавления карты на страницу
  *
- * @param {Object} data Данные из API, если это после запроса
+ * @param {Object[]} data Данные из API, если это после запроса
+ * @param {String} data.link URL картинки
+ * @param {String} data.name URL картинки
  * @param {Boolean} result Результат запроса в API
- * */
+ */
 function createNewCard(data, result) {
   // Обработка
-  if (!result) return;
+  if (!result) return;  // В API произошла ошибка
   const nameForm = findForm(windowCard);
   if (nameForm === '') return;
 
@@ -170,6 +175,8 @@ function createNewCard(data, result) {
 function closeWindow(elementWindow, functionCloseKey) {
   closePopup(elementWindow, settings, functionCloseKey);
 
+  if (elementWindow === windowMessage) buttonMessage.classList.remove(settings.classMarkerCall);
+
   // ... и почистить форму
   clearForm(elementWindow);
 }
@@ -186,6 +193,19 @@ function closeWindowMouseUp(event, elementWindow, functionCloseKey) {
 }
 
 /**
+ * Закрывашка для всех окон по клавише
+ *
+ * @param {Event} event Событие 'mouseup'
+ */
+function closeWindowKey(event) {
+  if (!verifyEventKeyDown(event, settings)) return;
+
+  // Найти окно
+  const elementWindow = document.querySelector(settings.classWindowOpen);
+  if (elementWindow !== null) closeWindow(elementWindow, closeWindowKey);
+}
+
+/**
  * Запуск окна "Редактировать аватар"
  */
 function openEditAvatar() {
@@ -193,16 +213,7 @@ function openEditAvatar() {
 
   buttonSetState(buttonAvatar, true, settings);
 
-  showPopup(windowAvatar, settings, closeEditAvatarKey);
-}
-
-/**
- * Закрыть окно "Редактировать аватар" по клавише
- *
- * @param {Event} event Событие 'keydown'
- */
-function closeEditAvatarKey(event) {
-  if (verifyEventKeyDown(event, settings)) closeWindow(windowAvatar, closeEditAvatarKey);
+  showPopup(windowAvatar, settings, closeWindowKey);
 }
 
 /**
@@ -222,10 +233,10 @@ function submitAvatar(event) {
   settings.bindAvatar.forEach(function (element) {
     data[element.name] = document.forms[nameForm].elements[element.nameForm].value
   });
-  console.log('submitAvatar', data);
+  data.buttonSubmit = buttonAvatar;
   updateAvatar(onEditAvatarAPI, data, settings);
 
-  closePopup(windowAvatar, settings, closeEditAvatarKey);
+  closePopup(windowAvatar, settings, closeWindowKey);
   // ... и почистить форму
   clearForm(windowAvatar);
 }
@@ -240,16 +251,7 @@ function openEditProfile() {
   clearValidation(windowProfile, buttonProfile, settings);
   buttonSetState(buttonProfile, false, settings);
 
-  showPopup(windowProfile, settings, closeProfileKey);
-}
-
-/**
- * Закрыть окно "Редактировать профиль" по клавише
- *
- * @param {Event} event Событие 'keydown'
- */
-function closeProfileKey(event) {
-  if (verifyEventKeyDown(event, settings)) closeWindow(windowProfile, closeProfileKey);
+  showPopup(windowProfile, settings, closeWindowKey);
 }
 
 /**
@@ -271,15 +273,16 @@ function submitProfile(event) {
     if ((element.nameAPI === '') || (element.nameForm === '')) return;
     data[element.nameAPI] = document.forms[nameForm].elements[element.nameForm].value
   });
+  data.buttonSubmit = buttonProfile;
   setProfile(onLoadAndSetProfileAPI, data, settings);
 
-  closePopup(windowProfile, settings, closeProfileKey);
+  closePopup(windowProfile, settings, closeWindowKey);
   // ... и почистить форму
   clearForm(windowProfile);
 }
 
 /**
- * Запуск окна "Добавить карточку"
+ * Запуск окна "Добавить карту"
  *
  */
 function openAddCard() {
@@ -287,20 +290,11 @@ function openAddCard() {
 
   buttonSetState(buttonCard, true, settings);
 
-  showPopup(windowCard, settings, closeAddCardKey);
+  showPopup(windowCard, settings, closeWindowKey);
 }
 
 /**
- * Закрыть окно "Добавить карточку" по клавише
- *
- * @param {Event} event Событие 'keydown' на кнопке 'Лайк'
- */
-function closeAddCardKey(event) {
-  if (verifyEventKeyDown(event, settings)) closeWindow(windowCard, closeAddCardKey);
-}
-
-/**
- * Обработка формы "Добавить карточку"
+ * Обработка формы "Добавить карту"
  *
  * @param {Event} event Событие 'submit'
  */
@@ -316,26 +310,41 @@ function submitCard(event) {
   settings.bindCard.forEach(function (element) {
     data[element.name] = document.forms[nameForm].elements[element.nameForm].value
   });
+  data.buttonSubmit = buttonCard;
   setCard(onAddCardAPI, data, settings);
 
-  closePopup(windowCard, settings, closeAddCardKey);
+  closePopup(windowCard, settings, closeWindowKey);
   // ... и почистить форму
   clearForm(windowCard);
 }
 
 /**
+ *
+ * @type {Object} Данные для дополнительных действий после закрытия окна с сообщением
+ */
+const dataToMessage = {
+  functionCall: null,
+  callback: null,
+  data: {},
+};
+
+/**
  * Обработка удаления Карты
  *
  * @callback onDeleteCard
- * @param {HTMLElement} elementPlace Карточка
+ * @param {HTMLElement} elementPlace Карта
  * @param {String} idCard Id карты
  */
 function onDeleteCard(elementPlace, idCard) {
-  const data = {
-    id: idCard,
-    elementPlace: elementPlace,
-  };
-  deleteCard(onDeleteCardAPI, data, settings)
+  // Что запустить, после нажатия на кнопку
+  dataToMessage.functionCall = deleteCard;
+  dataToMessage.callback = onDeleteCardAPI;
+  dataToMessage.data.id = idCard;
+  dataToMessage.data.elementPlace = elementPlace;
+  buttonMessage.classList.add(settings.classMarkerCall);
+
+  // Сначала спросить
+  showMessage('Вы уверены?', '', 'Да');
 }
 
 /**
@@ -345,15 +354,15 @@ function onDeleteCard(elementPlace, idCard) {
  * @param {String} idCard Id карты
  * @param {Object} settings Настройки
  */
-const onLikeCard = function (event, idCard, settings) {
+function onLikeCard(event, idCard, settings) {
   if (event.target === null) return;
 
   const data = {
     id: idCard,
+    elementCard: event.target.closest(settings.classPlacesItem),
     elementLike: event.target,
   };
   // Если лайк есть, то его надо снять, иначе поставить
-  console.log('onLikeCard', event.target);
   if (event.target.classList.contains(settings.classLikeYesNotDot)) {
     deleteLike(onLikeAPI, data, settings);
   } else {
@@ -367,20 +376,39 @@ const onLikeCard = function (event, idCard, settings) {
  * @callback onOpenPreview
  * @param {Event} event Событие 'click'
  */
-const  onOpenPreview = function(event) {
+function onOpenPreview(event) {
   // Инициализировать картинку
   initImage(windowImage, event.target);
 
-  showPopup(windowImage, settings, closeOpenPreviewKey);
+  showPopup(windowImage, settings, closeWindowKey);
 }
 
 /**
- * Закрыть окно "Добавить карточку" по клавише
+ * Показать окно "Всякие сообщения"
  *
- * @param {Event} event Событие 'keydown'
+ * @param {String} titleMessage Заголовок
+ * @param {String} textLabel Текст сообщения
+ * @param {String} textButton Текст на кнопке
  */
-function closeOpenPreviewKey(event) {
-  if (verifyEventKeyDown(event, settings)) closeWindow(windowImage, closeOpenPreviewKey);
+function showMessage(titleMessage, textLabel, textButton) {
+  captionMessage.textContent = titleMessage;
+  textMessage.textContent = textLabel;
+  buttonMessage.textContent = textButton;
+
+  showPopup(windowMessage, settings, closeWindowKey);
+}
+
+/**
+ * Нажата кнопка в окне "Всякие сообщения"
+ *
+ */
+function clickMessageButton() {
+  // Что-то исполнить?
+  if (buttonMessage.classList.contains(settings.classMarkerCall)) {
+    dataToMessage.functionCall(dataToMessage.callback, dataToMessage.data, settings);
+  }
+
+  closeWindow(windowMessage, closeWindowKey);
 }
 
 /**
@@ -401,8 +429,11 @@ function closeOpenPreviewKey(event) {
  * @param settings
  */
 function onLoadAndSetProfileAPI(result, data, extraData, settings) {
-  settings.apiIdUser = data['_id'];
-  editProfile(data, result, settings.bindProfile)
+  if (result) {
+    settings.apiIdUser = data['_id'];
+    editProfile(data, result, settings.bindProfile);
+  }
+  else showMessage('Ошибка при загрузке', data['error'], 'Понятно'); // Ошибка при загрузке
 }
 
 /**
@@ -419,7 +450,8 @@ function onLoadAndSetProfileAPI(result, data, extraData, settings) {
  * @param settings
  */
 function onLoadCardsAPI(result, data, extraData, settings) {
-  initPlaces(data, settings, false, objParam);
+  if (result) initPlaces(data, settings, false, objParam);
+  else showMessage('Ошибка при загрузке', data['error'], 'Понятно'); // Ошибка при загрузке
 }
 
 /**
@@ -433,8 +465,11 @@ function onLoadCardsAPI(result, data, extraData, settings) {
  * @param {String} data.link URL картинки карты
  */
 function onAddCardAPI(result, data) {
-  const arrayData = [data];
-  createNewCard(arrayData, result);
+  if (result) {
+    const arrayData = [data];
+    createNewCard(arrayData, result);
+  }
+  else showMessage('Ошибка при загрузке', data['error'], 'Понятно'); // Ошибка при загрузке
 }
 
 /**
@@ -449,7 +484,8 @@ function onAddCardAPI(result, data) {
  * @param {Object} extraData Дополнительные данные
  */
 function onDeleteCardAPI(result, data, extraData) {
-  removeCard(extraData.elementPlace);
+  if (result) removeCard(extraData.elementPlace);
+  else showMessage('Ошибка при загрузке', data['error'], 'Понятно'); // Ошибка при загрузке
 }
 
 /**
@@ -466,10 +502,15 @@ function onDeleteCardAPI(result, data, extraData) {
  * @param {HTMLElement} extraData.element Кнопка лайка
  * */
 function onLikeAPI(result, data, extraData) {
-  // Количество лайков
-  extraData.elementLike.parentElement.querySelector(settings.classLikesCount)
-           .textContent = data.likes.length;
-  likeCard (extraData.elementLike, settings);
+  if (result) {
+    // Количество лайков
+    extraData.elementLike.parentElement.querySelector(settings.classLikesCount)
+      .textContent = data['likes'].length.toString();
+    likeCard (extraData.elementLike, settings);
+    initialLike(extraData.elementCard, data, settings);
+    //console.log(data, extraData);
+  }
+  else showMessage('Ошибка при загрузке', data['error'], 'Понятно'); // Ошибка при загрузке
 }
 
 /**
@@ -482,11 +523,10 @@ function onLikeAPI(result, data, extraData) {
  * @param {String} data.name Имя карты
  * @param {String} data.link URL картинки карты
  * @param {Array} data.likes Лайки на карте
- * @param {Object} extraData Дополнительные данные
- * @param {HTMLElement} extraData.element Кнопка лайка
  * */
-function onEditAvatarAPI(result, data, extraData) {
-  editProfile(data, result, settings.bindProfile);
+function onEditAvatarAPI(result, data) {
+  if (result) editProfile(data, result, settings.bindProfile);
+  else showMessage('Ошибка при загрузке', data['error'], 'Понятно'); // Ошибка при загрузке
 }
 
 // Стартуем
@@ -516,32 +556,33 @@ const objParam = {
 //    а. Профиль и карты
 getProfileAndCard(onLoadAndSetProfileAPI, onLoadCardsAPI, settings);
 
-// 2. Инициализация модального окна
+// 2. Инициализация модальных окон
 //    а. Окно "Редактировать профиль"
 // Обработка результатов формы
 formProfile.addEventListener("submit", submitProfile);
 
-objListener.closeKey = closeProfileKey;
 setModalWindowEventListeners(windowProfile, settings, objListener);
 
-//    б. Окно "Добавить карточку"
+//    б. Окно "Добавить карту"
 // Обработка результатов формы
 formCard.addEventListener("submit", submitCard);
 
-objListener.closeKey = closeAddCardKey;
 setModalWindowEventListeners(windowCard, settings, objListener);
 
 //    в. Окно "Показ картинки"
-objListener.closeKey =  closeOpenPreviewKey;
 setModalWindowEventListeners(windowImage, settings, objListener);
 
 //    г. Окно "Обновить аватар"
 // Обработка результатов формы
 formAvatar.addEventListener("submit", submitAvatar);
 
-objListener.closeKey = closeEditAvatarKey;
 setModalWindowEventListeners(windowAvatar, settings, objListener);
 
+//    д. Окно "Всякие сообщения"
+// Обработка результатов формы
+buttonMessage.addEventListener('click', clickMessageButton);
+
+setModalWindowEventListeners(windowMessage, settings, objListener);
 
 // 3. Инициализация валидации
 enableValidation(settings);

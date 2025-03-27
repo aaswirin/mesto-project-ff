@@ -21,6 +21,9 @@ export const settings = {
   classForm: '.popup__form',                         // Класс формы
   classInput: '.popup__input',                       // Класс поля ввода
   classSubmitButton: '.popup__button',               // Класс кнопки на форме
+  classSubmitLabel: '.popup__button-label',          // Класс подписи кнопки на форме
+  classSpinner: '.popup__spinner',                   // Класс спиннера кнопки на форме
+  classSpinnerVisible: 'popup__spinner-visible',     // Класс включения спиннера кнопки на форме
   keysClose: [                                       // Список клавиш, по которым закрываем окно. Вдруг поменяется?
     'Escape',
     //'F10',
@@ -28,7 +31,6 @@ export const settings = {
   // Редактировать аватар
   classButtonEditAvatar: '.profile__image',          // Класс для кнопки "Редактировать аватар"
   classWindowEditAvatar: '.popup_edit-avatar',       // Класс для окна "Редактировать профиль"
-  nameFormEditAvatar: 'edit-avatar',                 // Имя формы "Редактировать профиль"
   bindAvatar: [                                      // Связки полей на форме и на странице
     {
       name: 'link',
@@ -38,7 +40,6 @@ export const settings = {
   // Редактировать профиль
   classButtonEditProfile: '.profile__edit-button',   // Класс для кнопки "Редактировать профиль"
   classWindowEditProfile: '.popup_type_edit',        // Класс для окна "Редактировать профиль"
-  nameFormEditProfile: 'edit-profile',               // Имя формы "Редактировать профиль"
   bindProfile: [                                     // Связки полей на форме и на странице и в API
     {
       classPage: '.profile__title',                  // Класс на странице
@@ -59,13 +60,12 @@ export const settings = {
       typeElement: 'image',
     },
   ],
-  // Добавить карточку
-  classButtonAddCard: '.profile__add-button',        // Класс для кнопки "Добавить карточку"
-  classWindowAddCard: '.popup_type_new-card',        // Класс для окна "Добавить карточку"
-  nameFormAddCard: 'new-place',                      // Имя формы "Добавить карточку"
+  // Добавить карту
+  classButtonAddCard: '.profile__add-button',        // Класс для кнопки "Добавить карту"
+  classWindowAddCard: '.popup_type_new-card',        // Класс для окна "Добавить карту"
   bindCard: [                                        // Связки полей на форме и на странице
     {
-      name: 'name',                                  // Имя значения объекта для создания карточки
+      name: 'name',                                  // Имя значения объекта для создания карты
       nameForm: 'place-name',                        // Имя на форме, откуда взять значение
     },
     {
@@ -77,21 +77,30 @@ export const settings = {
   classWindowViewImage: '.popup_type_image',                       // Класс для окна "Просмотр картинки"
   classViewImage: '.popup__image',                                 // Класс для картинки, которую показываем
   classViewCaption: '.popup__caption',                             // Подпись под картинкой, которую показываем
-  // Лайк карточки
+  // Показ сообщения
+  classWindowMessage: '.popup_message',                            // Класс для окна "Всякие сообщения"
+  classCaptionMessage: '.popup__title',                            // Класс для заголовка окна "Всякие сообщения"
+  classTextMessage: '.popup__text',                                // Класс для текста окна "Всякие сообщения"
+  classMarkerCall: '.popup__marker-call',                          // Класс для кнопки окна "Всякие сообщения", если нужно что-то выполнить
+  // Лайк карты
   classLikeButton: '.card__like-button',                           // Класс для кнопки лайка
-  classLikeYes: '.card__like-button_is-active',                    // Класс для установки лайка
   classLikeYesNotDot: 'card__like-button_is-active',               // Класс для установки лайка (без точки)
   classLikesCount: '.card__likes-count',                           // Класс для количества лайков на карте
+  classLikesTooltip: '.card__tooltip',                             // Класс для списка поставивших лайк
+  classItemTooltip: 'card__tooltip-item',                          // Класс для элемента списка поставивших лайк
+  classTitleTooltip: 'card__tooltip-title',                        // Класс для заголовка списка поставивших лайк
+  classImageTooltip: 'card__tooltip-image',                        // Класс для изображения списка поставивших лайк
+  classTextTooltip: 'card__tooltip-text',                          // Класс для текста списка поставивших лайк
+  countLikeInTooltip: 5,                                           // Количество лайков для показа
   // Валидация
   classErrorValidation: 'popup__input-error',                      // Класс для подчёркивания поля ввода при ошибке
   classValidationContainer: 'popup__input-error-container-active', // Класс для описания ошибки валидации
   classButtonInActive: 'popup__button-inactive',                   // Класс для неактивной кнопки формы
   // API
   apiIdUser: '',                                                   // Здесь будет храниться полученный Id пользователя
-  apiURL: 'https://nomoreparties.co/v1/',                          // Адрес сервера проекта Mesto
+  apiURL: 'https://nomoreparties.co/v1/',                          // Адрес сервера проекта "Место"
   apiIdGroup: 'wff-cohort-35',                                     // Идентификатор группы
   apiToken: '1e636933-64cf-4fb7-82cc-a4047b92f087',                // Токен
-  messageField: 'message',                                         // Поле в ответе API для сообщений
   methodProfile: 'users/me',                                       // Метод API для профиля
   methodCard: 'cards',                                             // Метод API для карт
   methodLike: 'cards/likes',                                       // Метод API для лайков

@@ -1,0 +1,10 @@
+.card__tooltip-image {
+  width: 20px;
+  height: 20px;
+  -webkit-border-radius: 50%;
+  -moz-border-radius: 50%;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  /* margin: 0 29px 0 0; */
+}

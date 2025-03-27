@@ -2,8 +2,6 @@
  Общение с API
  */
 
-import {settings} from "./settings";
-
 /**
  * Обратиться к API
  *
@@ -12,27 +10,64 @@ import {settings} from "./settings";
  * @param {Object} extraData дополнительные данные для callback'ов
  * @param {Object} settings Настройки
  */
-function callAPI(promises, callbacks, extraData, settings) {
+function callingAPI(promises, callbacks, extraData, settings) {
   Promise.all(promises)
     .then((res) =>{
       res.forEach((response, index) => {
-        response.json().then((data) => {
-          if (typeof data[settings.messageField] !== 'undefined') {  // Что-то пошло не так
-            callbacks[index](false, {error: data[settings.messageField]}, extraData, settings);
-          } else {
-            callbacks[index](true, data, extraData, settings);
-          }
-        })
-        .catch((err) => {
-          callbacks[0](false, {error: err}, extraData, settings);
+        response.json()
+          .then((data) => {
+            if (res[index].ok) {
+              callbacks[index](true, data, extraData, settings);
+            } else {
+              let error = `Ошибка ${res[index].status}`;
+              // Уточнить ошибку
+              if (typeof data.message !== 'undefined') {
+                error = error + `: ${data.message}`;
+              }
+              return Promise.reject(error);
+            }
+          })
+          .catch((err) => {
+            callbacks[0](false, {error: err}, extraData, settings);
+          });
         });
       })
-    })
-    .catch((err) => {
-      callbacks[0](false, {error: err}, extraData, settings);
-    });
+      .catch((err) => {
+        callbacks[0](false, {error: err}, extraData, settings);
+      });
 }
 
+/**
+ * Собрать параметры для вызова API
+ *
+ * @param {Object} params Параметры
+ * @param {String} params.nameMethod Имя метода в API
+ * @param {String} params.method Метод вызова
+ * @param {Object} params.body Тело запроса
+ * @param {String} params.id Id для запросов
+ * @param {Object} settings Настройки
+ * @return {Promise} Сформированный промис
+ */
+function buildPromiseCall(params, settings) {
+  let url = `${settings.apiURL}${settings.apiIdGroup}/${params.nameMethod}`;
+
+  const options = {
+      method: params.method,
+      headers: {
+        authorization: settings.apiToken,
+      },
+    };
+
+  if (params.id !== null) {
+    url = url + `/${params.id}`;
+  }
+  if (params.body !== null) {
+    options.headers['Content-Type'] = 'application/json';
+    options.body = JSON.stringify(params.body);
+  }
+
+  return fetch(url, options)
+}
 /**
  * Получить из API профиль и карты
  *
@@ -42,23 +77,15 @@ function callAPI(promises, callbacks, extraData, settings) {
  */
 export function getProfileAndCard(onLoadAndSetProfileAPI, onLoadCardsAPI, settings) {
   const promiseAll = [
-    fetch(`${settings.apiURL}${settings.apiIdGroup}/${settings.methodProfile}`, {
-      headers: {
-        authorization: settings.apiToken,
-      }
-    }),
-    fetch(`${settings.apiURL}${settings.apiIdGroup}/${settings.methodCard}`, {
-      headers: {
-        authorization: settings.apiToken,
-      }
-    }),
-
+    buildPromiseCall({nameMethod: settings.methodProfile, method: 'GET', body: null, id: null}, settings),
+    buildPromiseCall({nameMethod: settings.methodCard, method: 'GET', body: null, id: null}, settings),
   ];
+
   const callbacks = [
     onLoadAndSetProfileAPI,
     onLoadCardsAPI,
   ];
-  callAPI(promiseAll, callbacks, null, settings);
+  callingAPI(promiseAll, callbacks, null, settings);
 }
 
 /**
@@ -68,26 +95,24 @@ export function getProfileAndCard(onLoadAndSetProfileAPI, onLoadCardsAPI, settin
  * @param {Object} data Данные профиля
  * @param {String} data.name Имя профиля
  * @param {String} data.about Описание профиля
+ * @param {HTMLElement} data.buttonSubmit Кнопка "Сохранить"
  * @param {Object} settings Настройки
  */
 export function setProfile(onSetProfileAPI, data, settings) {
   const promiseAll = [
-    fetch(`${settings.apiURL}${settings.apiIdGroup}/${settings.methodProfile}`, {
-      method: 'PATCH',
-      headers: {
-        authorization: settings.apiToken,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: data.name,
-        about: data.about,
-      })
-    })
-  ]
+    buildPromiseCall(
+      {nameMethod: settings.methodProfile, method: 'PATCH',
+        body: {name: data.name, about: data.about}, id: null},
+      settings),
+  ];
+
   const callbacks = [
     onSetProfileAPI
   ];
-  callAPI(promiseAll, callbacks, null, settings);
+
+  data.buttonSubmit.querySelector(settings.classSubmitLabel).textContent = "Сохранить...";
+  data.buttonSubmit.querySelector(settings.classSpinner).classList.add(settings.classSpinnerVisible);
+  callingAPI(promiseAll, callbacks, null, settings);
 }
 
 /**
@@ -97,26 +122,23 @@ export function setProfile(onSetProfileAPI, data, settings) {
  * @param {Object} data Данные карты
  * @param {String} data.name Имя карты
  * @param {String} data.link URL карты
+ * @param {HTMLElement} data.buttonSubmit Кнопка "Сохранить"
  * @param {Object} settings Настройки
  */
 export function setCard(onSetCardAPI, data, settings) {
   const promiseAll = [
-    fetch(`${settings.apiURL}${settings.apiIdGroup}/${settings.methodCard}`, {
-      method: 'POST',
-      headers: {
-        authorization: settings.apiToken,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: data.name,
-        link: data.link,
-      })
-    })
-  ]
+    buildPromiseCall(
+      {nameMethod: settings.methodCard, method: 'POST', body: {name: data.name, link: data.link}, id: null},
+      settings),
+  ];
+
   const callbacks = [
     onSetCardAPI
   ];
-  callAPI(promiseAll, callbacks, null, settings);
+
+  data.buttonSubmit.querySelector(settings.classSubmitLabel).textContent = "Сохранить...";
+  data.buttonSubmit.querySelector(settings.classSpinner).classList.add(settings.classSpinnerVisible);
+  callingAPI(promiseAll, callbacks, null, settings);
 }
 
 /**
@@ -130,17 +152,13 @@ export function setCard(onSetCardAPI, data, settings) {
  */
 export function deleteCard(onDeleteCardAPI, data, settings) {
   const promiseAll = [
-    fetch(`${settings.apiURL}${settings.apiIdGroup}/${settings.methodCard}/${data.id}`, {
-      method: 'DELETE',
-      headers: {
-        authorization: settings.apiToken,
-      },
-    })
-  ]
+    buildPromiseCall({nameMethod: settings.methodCard, method: 'DELETE', body: null, id: data.id}, settings),
+  ];
+
   const callbacks = [
     onDeleteCardAPI
   ];
-  callAPI(promiseAll, callbacks, data, settings);
+  callingAPI(promiseAll, callbacks, data, settings);
 }
 
 /**
@@ -149,22 +167,19 @@ export function deleteCard(onDeleteCardAPI, data, settings) {
  * @param {onSetLikeAPI} onSetLikeAPI Функция обработки результатов удаления карты
  * @param {Object} data Данные карты
  * @param {String} data.id Id карты
- * @param {HTMLElement} data.element Карта лайка
+ * @param {HTMLElement} data.elementCard Карта лайка
+ * @param {HTMLElement} data.elementLike Кнопка лайка
  * @param {Object} settings Настройки
  */
 export function setLike(onSetLikeAPI, data, settings) {
   const promiseAll = [
-    fetch(`${settings.apiURL}${settings.apiIdGroup}/${settings.methodLike}/${data.id}`, {
-      method: 'PUT',
-      headers: {
-        authorization: settings.apiToken,
-      },
-    })
-  ]
+    buildPromiseCall({nameMethod: settings.methodLike, method: 'PUT', body: null, id: data.id}, settings),
+  ];
+
   const callbacks = [
     onSetLikeAPI
   ];
-  callAPI(promiseAll, callbacks, data, settings);
+  callingAPI(promiseAll, callbacks, data, settings);
 }
 
 /**
@@ -173,22 +188,19 @@ export function setLike(onSetLikeAPI, data, settings) {
  * @param {onDeleteLikeAPI} onDeleteLikeAPI Функция обработки результатов удаления карты
  * @param {Object} data Данные карты
  * @param {String} data.id Id карты
- * @param {HTMLElement} data.element Карта для удаления лайка
+ * @param {HTMLElement} data.elementCard Карта лайка
+ * @param {HTMLElement} data.elementLike Кнопка лайка
  * @param {Object} settings Настройки
  */
 export function deleteLike(onDeleteLikeAPI, data, settings) {
   const promiseAll = [
-    fetch(`${settings.apiURL}${settings.apiIdGroup}/${settings.methodLike}/${data.id}`, {
-      method: 'DELETE',
-      headers: {
-        authorization: settings.apiToken,
-      },
-    })
-  ]
+    buildPromiseCall({nameMethod: settings.methodLike, method: 'DELETE', body: null, id: data.id}, settings),
+  ];
+
   const callbacks = [
     onDeleteLikeAPI
   ];
-  callAPI(promiseAll, callbacks, data, settings);
+  callingAPI(promiseAll, callbacks, data, settings);
 }
 
 /**
@@ -197,23 +209,18 @@ export function deleteLike(onDeleteLikeAPI, data, settings) {
  * @param {onEditAvatarAPI} onEditAvatarAPI Функция обработки результатов обновления аватара
  * @param {Object} data Данные аватара
  * @param {String} data.link URL аватара
+ * @param {HTMLElement} data.buttonSubmit Кнопка "Сохранить"
  * @param {Object} settings Настройки
  */
 export function updateAvatar(onEditAvatarAPI, data, settings) {
   const promiseAll = [
-    fetch(`${settings.apiURL}${settings.apiIdGroup}/${settings.methodAvatar}`, {
-      method: 'PATCH',
-      headers: {
-        authorization: settings.apiToken,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        avatar: data.link,
-      })
-    })
+    buildPromiseCall({nameMethod: settings.methodAvatar, method: 'PATCH', body: {avatar: data.link}, id: null}, settings),
   ]
   const callbacks = [
     onEditAvatarAPI
   ];
-  callAPI(promiseAll, callbacks, null, settings);
+
+  data.buttonSubmit.querySelector(settings.classSubmitLabel).textContent = "Сохранить...";
+  data.buttonSubmit.querySelector(settings.classSpinner).classList.add(settings.classSpinnerVisible);
+  callingAPI(promiseAll, callbacks, null, settings);
 }

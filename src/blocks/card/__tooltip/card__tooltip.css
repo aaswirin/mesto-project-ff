@@ -1,0 +1,28 @@
+.card__like-container:hover .card__tooltip {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.card__tooltip {
+  display: none;
+  background: wheat;
+  padding: 10px;
+  right: 10px;
+  bottom: 60px;
+  position: absolute;
+  font-size: 14px;
+  z-index: 100;
+  width: 200px;
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+  border: 1px solid black;
+  transition: display 0s 3s;
+}
+
+.card__tooltip-item {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+}
