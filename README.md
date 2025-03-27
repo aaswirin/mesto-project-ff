@@ -1,4 +1,4 @@
-# Проектная работа MЫsto
+# Проектная работа Mesto
 
 [GitHub](https://github.com/aaswirin/mesto-project-ff.git)
 
