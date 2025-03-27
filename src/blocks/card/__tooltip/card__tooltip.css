@@ -18,7 +18,7 @@
   -moz-border-radius: 10px;
   border-radius: 10px;
   border: 1px solid black;
-  transition: display 0s 3s;
+  list-style: none;
 }
 
 .card__tooltip-item {
