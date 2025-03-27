@@ -80,7 +80,7 @@ export function initialLike(elementPlace, objectPlace, settings) {
       if (like['_id'] === settings.apiIdUser) {
         elementPlace.querySelector(settings.classLikeButton).classList.add(settings.classLikeYesNotDot);
       }
-      if (addLike <= settings.countLikeInTooltip + 1) {  // Можно добавлять
+      if (addLike <= settings.countLikeInTooltip) {  // Можно добавлять
         // Элемент списка
         const listItem = document.createElement('li');
         listItem.classList.add(settings.classItemTooltip);
@@ -104,8 +104,9 @@ export function initialLike(elementPlace, objectPlace, settings) {
     })
     if (overLike !== 0) {
       const listItem = document.createElement('li');
-      listItem.classList.add(settings.classTitleTooltip);
+      //listItem.classList.add(settings.classTitleTooltip);
       listItem.textContent = `...и ещё ${overLike}`;
+      likesTooltip.append(listItem);
     }
   }
   // Добавить в список заголовок
