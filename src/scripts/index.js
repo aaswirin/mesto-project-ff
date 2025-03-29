@@ -14,7 +14,6 @@ import {showPopup, closePopup, verifyEventMouseUp, verifyEventKeyDown, setModalW
 import {enableValidation, clearValidation, buttonSetState} from '../components/validation.js';
 // API
 import {getProfileAndCard, setProfile, setCard, deleteCard, setLike, deleteLike, updateAvatar} from '../components/api.js';
-import {data} from "autoprefixer";
 
 /** Заготовка */
 const cardTemplate = document.querySelector(settings.idTemplate).content;
