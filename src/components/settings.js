@@ -24,6 +24,11 @@ export const settings = {
   classSubmitLabel: '.popup__button-label',          // Класс подписи кнопки на форме
   classSpinner: '.popup__spinner',                   // Класс спиннера кнопки на форме
   classSpinnerVisible: 'popup__spinner-visible',     // Класс включения спиннера кнопки на форме
+  classNetError: '.popup__net-error',                // Класс для сообщения об ошибке сети
+  classNetErrorShow: 'popup__net-error-show',        // Класс для показа сообщения об ошибке сети
+  classNetErrorClose: '.popup__net-error-close',     // Класс для кнопки закрытия сообщения об ошибке сети
+  classNetErrorMessage: '.popup__net-error-message', // Класс для текста сообщения об ошибке сети
+  timeShowNetError: 10,                              // Время показа сетевой ошибки в секундах
   keysClose: [                                       // Список клавиш, по которым закрываем окно. Вдруг поменяется?
     'Escape',
     //'F10',
@@ -91,6 +96,7 @@ export const settings = {
   classTitleTooltip: 'card__tooltip-title',                        // Класс для заголовка списка поставивших лайк
   classImageTooltip: 'card__tooltip-image',                        // Класс для изображения списка поставивших лайк
   classTextTooltip: 'card__tooltip-text',                          // Класс для текста списка поставивших лайк
+  classMarginTooltip: 'card__tooltip-item-margin',                 // Класс для отступов
   countLikeInTooltip: 5,                                           // Количество лайков для показа
   // Валидация
   classErrorValidation: 'popup__input-error',                      // Класс для подчёркивания поля ввода при ошибке

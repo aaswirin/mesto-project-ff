@@ -7,13 +7,14 @@ import '../pages/index.css';
 // Настройки проекта
 import {settings} from '../components/settings.js';
 // Функция для создания карт при инициализации
-import {initPlaces, likeCard, removeCard, initialLike} from '../components/card.js';
+import {createCard, removeCard, onLikeCard} from '../components/card.js';
 // Обработка окон
 import {showPopup, closePopup, verifyEventMouseUp, verifyEventKeyDown, setModalWindowEventListeners} from '../components/modal.js';
 // Валидация
 import {enableValidation, clearValidation, buttonSetState} from '../components/validation.js';
 // API
 import {getProfileAndCard, setProfile, setCard, deleteCard, setLike, deleteLike, updateAvatar} from '../components/api.js';
+import {data} from "autoprefixer";
 
 /** Заготовка */
 const cardTemplate = document.querySelector(settings.idTemplate).content;
@@ -118,19 +119,24 @@ function clearForm(elementWindow) {
 
   // Теперь можно и прибраться
   document.forms[nameForm].reset();
+
+  // Для снятия сетевой ошибки
+  const elementNetError = elementWindow.querySelector(settings.classNetError);
+  if (elementNetError !== null) {
+    hideNetError(elementNetError);
+  }
 }
 
 /**
  * Результат формы для добавления профиля на страницу
  *
  * @param {Object} data Данные из API, если это после запроса, иначе {}
- * @param {Boolean} result Результат запроса в API
  * @param {Object[]} bindFields связки полей
  * @param {string} bindFields.classPage Класс элемента из которого нужно взять значение
  * @param {string} bindFields.nameAPI Имя в объекте из API
  * @param {string} bindFields.typeElement Тип элемента: 'text' или 'image'
  */
-function editProfile(data, result, bindFields) {
+function editProfile(data, bindFields) {
   // Из объекта на страницу по настройке
   bindFields.forEach(function (element) {
     const htmlElement = document.querySelector(element.classPage);
@@ -151,15 +157,40 @@ function editProfile(data, result, bindFields) {
  * @param {Object[]} data Данные из API, если это после запроса
  * @param {String} data.link URL картинки
  * @param {String} data.name URL картинки
- * @param {Boolean} result Результат запроса в API
+ * @param {string} data.owner Владелец карты
+ * @param {Object[]} data.likes Массив лайков
  */
-function createNewCard(data, result) {
+function createNewCard(data) {
   // Обработка
-  if (!result) return;  // В API произошла ошибка
   const nameForm = findForm(windowCard);
   if (nameForm === '') return;
 
-  initPlaces(data, settings, true, objParam);
+  initPlaces(data, true);
+}
+
+/**
+ * Вывести на форму сетевую ошибку
+ *
+ * @param {HTMLElement} elementWindow Окно в котором произошла сетевая ошибка
+ * @param {String} error Сообщение об ошибке
+ */
+function showNetError(elementWindow, error) {
+  const elementNetError = elementWindow.querySelector(settings.classNetError);
+  elementNetError.classList.add(settings.classNetErrorShow);
+  elementWindow.querySelector(settings.classNetErrorMessage).textContent = error;
+  // Снять ошибку через 10 секунд
+  setTimeout(() => {
+    hideNetError(elementNetError);
+  }, settings.timeShowNetError * 1000);
+}
+
+/**
+ * Снять сообщение о сетевой ошибки
+ *
+ * @param {HTMLElement} elementNetError Окно в котором произошла сетевая ошибка
+ */
+function hideNetError(elementNetError) {
+  elementNetError.classList.remove(settings.classNetErrorShow);
 }
 
 /**
@@ -233,12 +264,30 @@ function submitAvatar(event) {
   settings.bindAvatar.forEach(function (element) {
     data[element.name] = document.forms[nameForm].elements[element.nameForm].value
   });
-  data.buttonSubmit = buttonAvatar;
-  updateAvatar(onEditAvatarAPI, data, settings);
-
-  closePopup(windowAvatar, settings, closeWindowKey);
-  // ... и почистить форму
-  clearForm(windowAvatar);
+  buttonAvatar.querySelector(settings.classSubmitLabel).textContent = "Сохранение...";
+  buttonAvatar.querySelector(settings.classSpinner).classList.add(settings.classSpinnerVisible);
+  updateAvatar(data, settings)
+    .then((response) =>{
+      // Не всё так хорошо?
+      if (response.ok) {
+        return response.json();
+      }
+      return Promise.reject(`Ошибка при записи аватара:  ${response.status}, ${response.statusText}`);
+    })
+    .then((resJSON) => {
+      editProfile(resJSON, settings.bindProfile);
+      // Закрыть
+      closePopup(windowAvatar, settings, closeWindowKey);
+      // ... и почистить форму
+      clearForm(windowAvatar);
+    })
+    .catch((error) => {
+      showNetError(windowAvatar, error)
+    })
+    .finally(() =>{
+      buttonAvatar.querySelector(settings.classSubmitLabel).textContent = "Сохранить";
+      buttonAvatar.querySelector(settings.classSpinner).classList.remove(settings.classSpinnerVisible);
+    });
 }
 
 /**
@@ -273,12 +322,31 @@ function submitProfile(event) {
     if ((element.nameAPI === '') || (element.nameForm === '')) return;
     data[element.nameAPI] = document.forms[nameForm].elements[element.nameForm].value
   });
-  data.buttonSubmit = buttonProfile;
-  setProfile(onLoadAndSetProfileAPI, data, settings);
 
-  closePopup(windowProfile, settings, closeWindowKey);
-  // ... и почистить форму
-  clearForm(windowProfile);
+  buttonProfile.querySelector(settings.classSubmitLabel).textContent = "Сохранение...";
+  buttonProfile.querySelector(settings.classSpinner).classList.add(settings.classSpinnerVisible);
+  setProfile(data, settings)
+    .then((response) => {
+      // Не всё так хорошо?
+      if (response.ok) {
+        return response.json();
+      }
+      return Promise.reject(`Ошибка при записи профиля:  ${response.status}, ${response.statusText}`);
+    })
+    .then((resJSON) => {
+      editProfile(resJSON, settings.bindProfile);
+      // Закрыть
+      closePopup(windowProfile, settings, closeWindowKey);
+      // ... и почистить форму
+      clearForm(windowProfile);
+    })
+    .catch((error) => {
+      showNetError(windowProfile, error)
+    })
+    .finally(() =>{
+      buttonProfile.querySelector(settings.classSubmitLabel).textContent = "Сохранить";
+      buttonProfile.querySelector(settings.classSpinner).classList.remove(settings.classSpinnerVisible);
+    });
 }
 
 /**
@@ -310,12 +378,32 @@ function submitCard(event) {
   settings.bindCard.forEach(function (element) {
     data[element.name] = document.forms[nameForm].elements[element.nameForm].value
   });
-  data.buttonSubmit = buttonCard;
-  setCard(onAddCardAPI, data, settings);
 
-  closePopup(windowCard, settings, closeWindowKey);
-  // ... и почистить форму
-  clearForm(windowCard);
+  buttonCard.querySelector(settings.classSubmitLabel).textContent = "Сохранение...";
+  buttonCard.querySelector(settings.classSpinner).classList.add(settings.classSpinnerVisible);
+  setCard(data, settings)
+    .then((response) => {
+      // Не всё так хорошо?
+      if (response.ok) {
+        return response.json();
+      }
+      return Promise.reject(`Ошибка при записи новой карты:  ${response.status}, ${response.statusText}`);
+    })
+    .then((resJSON) => {
+      const arrayData = [resJSON];
+      createNewCard(arrayData);
+      // Закрыть
+      closePopup(windowCard, settings, closeWindowKey);
+      // ... и почистить форму
+      clearForm(windowCard);
+    })
+    .catch((error) => {
+      showNetError(windowCard, error)
+    })
+    .finally(() =>{
+      buttonCard.querySelector(settings.classSubmitLabel).textContent = "Сохранить";
+      buttonCard.querySelector(settings.classSpinner).classList.remove(settings.classSpinnerVisible);
+    });
 }
 
 /**
@@ -338,36 +426,14 @@ const dataToMessage = {
 function onDeleteCard(elementPlace, idCard) {
   // Что запустить, после нажатия на кнопку
   dataToMessage.functionCall = deleteCard;
-  dataToMessage.callback = onDeleteCardAPI;
+  dataToMessage.callback = removeCard;
+  dataToMessage.messageError = 'Ошибка при удалении карты';
   dataToMessage.data.id = idCard;
   dataToMessage.data.elementPlace = elementPlace;
   buttonMessage.classList.add(settings.classMarkerCall);
 
   // Сначала спросить
   showMessage('Вы уверены?', '', 'Да');
-}
-
-/**
- * Поставить/снять лайк картинки
- * @callback onLikeCard
- * @param {Event} event Событие 'click' на кнопке
- * @param {String} idCard Id карты
- * @param {Object} settings Настройки
- */
-function onLikeCard(event, idCard, settings) {
-  if (event.target === null) return;
-
-  const data = {
-    id: idCard,
-    elementCard: event.target.closest(settings.classPlacesItem),
-    elementLike: event.target,
-  };
-  // Если лайк есть, то его надо снять, иначе поставить
-  if (event.target.classList.contains(settings.classLikeYesNotDot)) {
-    deleteLike(onLikeAPI, data, settings);
-  } else {
-    setLike(onLikeAPI, data, settings);
-  }
 }
 
 /**
@@ -405,128 +471,47 @@ function showMessage(titleMessage, textLabel, textButton) {
 function clickMessageButton() {
   // Что-то исполнить?
   if (buttonMessage.classList.contains(settings.classMarkerCall)) {
-    dataToMessage.functionCall(dataToMessage.callback, dataToMessage.data, settings);
+    dataToMessage.functionCall(dataToMessage.data, settings)
+      .then((response) => {
+        // Не всё так хорошо?
+        if (response.ok) {
+          dataToMessage.callback(dataToMessage.data);
+          return;
+        }
+        return Promise.reject(`${dataToMessage.messageError}:  ${response.status}, ${response.statusText}`);
+      })
+      .catch((error) => {
+        showMessage(dataToMessage.messageError, error, 'Понятно'); // Ошибка при загрузке
+      });
   }
-
+  // Закрыть
   closeWindow(windowMessage, closeWindowKey);
 }
 
 /**
- * Работа с API. Загрузки...
+ * Вывести карты на страницу
+ *
+ * @param {Object[]} initCards Массив описаний карт
+ * @param {string} initCards.name Наименование Места
+ * @param {string} initCards.link URL картинки
+ * @param {string} initCards.owner Владелец карты
+ * @param {Object[]} initCards.likes Массив лайков
+ * @param {boolean} addToBegin Создавать карты в начале
  */
-/**
- * Обработка загрузки или обновления Профиля через API
- *
- * @callback onLoadAndSetProfileAPI
- * @param {Boolean} result результат запроса
- * @param {Object} data Данные запроса
- * @param {String} data.error Ошибка при result = false
- * @param {String} data.name Имя профиля
- * @param {String} data.about Описание профиля
- * @param {String} data.avatar URL картинки профиля
- * @param {String} data._id Id пользователя
- * @param {Object} extraData Дополнительные данные
- * @param settings
- */
-function onLoadAndSetProfileAPI(result, data, extraData, settings) {
-  if (result) {
-    settings.apiIdUser = data['_id'];
-    editProfile(data, result, settings.bindProfile);
-  }
-  else showMessage('Ошибка при загрузке', data['error'], 'Понятно'); // Ошибка при загрузке
-}
-
-/**
- * Обработка загрузки Карт через API
- *
- * @callback onLoadCardsAPI
- * @param {Boolean} result результат запроса
- * @param {Object} data Данные запроса
- * @param {String} data.error Ошибка при result = false
- * @param {String} data.name Имя профиля
- * @param {String} data.about Описание профиля
- * @param {String} data.avatar URL картинки профиля
- * @param {Object} extraData Дополнительные данные
- * @param settings
- */
-function onLoadCardsAPI(result, data, extraData, settings) {
-  if (result) initPlaces(data, settings, false, objParam);
-  else showMessage('Ошибка при загрузке', data['error'], 'Понятно'); // Ошибка при загрузке
-}
-
-/**
- * Обработка добавления Карты через API
- *
- * @callback onAddCardAPI
- * @param {Boolean} result результат запроса
- * @param {Object} data Данные запроса
- * @param {String} data.error Ошибка при result = false
- * @param {String} data.name Имя карты
- * @param {String} data.link URL картинки карты
- */
-function onAddCardAPI(result, data) {
-  if (result) {
-    const arrayData = [data];
-    createNewCard(arrayData, result);
-  }
-  else showMessage('Ошибка при загрузке', data['error'], 'Понятно'); // Ошибка при загрузке
-}
-
-/**
- * Обработка удаления Карты через API
- *
- * @callback onDeleteCardAPI
- * @param {Boolean} result результат запроса
- * @param {Object} data Данные запроса
- * @param {String} data.error Ошибка при result = false
- * @param {String} data.name Имя карты
- * @param {String} data.link URL картинки карты
- * @param {Object} extraData Дополнительные данные
- */
-function onDeleteCardAPI(result, data, extraData) {
-  if (result) removeCard(extraData.elementPlace);
-  else showMessage('Ошибка при загрузке', data['error'], 'Понятно'); // Ошибка при загрузке
-}
-
-/**
- * Обработка установки/снятия лайка с Карты через API
- *
- * @callback onLikeAPI
- * @param {Boolean} result результат запроса
- * @param {Object} data Данные запроса
- * @param {String} data.error Ошибка при result = false
- * @param {String} data.name Имя карты
- * @param {String} data.link URL картинки карты
- * @param {Array} data.likes Лайки на карте
- * @param {Object} extraData Дополнительные данные
- * @param {HTMLElement} extraData.element Кнопка лайка
- * */
-function onLikeAPI(result, data, extraData) {
-  if (result) {
-    // Количество лайков
-    extraData.elementLike.parentElement.querySelector(settings.classLikesCount)
-      .textContent = data['likes'].length.toString();
-    likeCard (extraData.elementLike, settings);
-    initialLike(extraData.elementCard, data, settings);
-    //console.log(data, extraData);
-  }
-  else showMessage('Ошибка при загрузке', data['error'], 'Понятно'); // Ошибка при загрузке
-}
-
-/**
- * Обработка обновления аватара через API
- *
- * @callback onEditAvatarAPI
- * @param {Boolean} result результат запроса
- * @param {Object} data Данные запроса
- * @param {String} data.error Ошибка при result = false
- * @param {String} data.name Имя карты
- * @param {String} data.link URL картинки карты
- * @param {Array} data.likes Лайки на карте
- * */
-function onEditAvatarAPI(result, data) {
-  if (result) editProfile(data, result, settings.bindProfile);
-  else showMessage('Ошибка при загрузке', data['error'], 'Понятно'); // Ошибка при загрузке
+function initPlaces(initCards, addToBegin) {
+  const objFunction = {
+    onDeleteCard,
+    onOpenPreview,
+    onLikeCard,
+    deleteLike,
+    setLike,
+    showMessage,
+  };
+  initCards.forEach(function (item) {
+    let newPlace = createCard(item, cardTemplate, settings, objFunction);
+    if (addToBegin) placesContainer.prepend(newPlace)
+    else placesContainer.append(newPlace);
+  });
 }
 
 // Стартуем
@@ -539,22 +524,35 @@ const objListener = {
   close: closeWindow,
   closeUp: closeWindowMouseUp,
 };
-/**
- * Параметры для создания карт
- *
- * @type {object} callback'и для окна "Редактировать профиль"
- */
-const objParam = {
-  cardTemplate,
-  placesContainer,
-  onOpenPreview,
-  onDeleteCard,
-  onLikeCard,
-};
 
 // 1. Загрузки через API
 //    а. Профиль и карты
-getProfileAndCard(onLoadAndSetProfileAPI, onLoadCardsAPI, settings);
+getProfileAndCard(settings)
+  .then((responses) => {
+    // Не всё так хорошо?
+    if ((!responses[0].ok) || (!responses[1].ok)) {
+      let errorNumber;
+      if (!responses[0].ok) errorNumber = 0
+      else errorNumber = 1;
+      const what = errorNumber === 0 ? 'профиля' : 'карт';
+
+      return Promise.reject(`Ошибка при загрузке ${what}:  ${responses[errorNumber].status}, ${responses[errorNumber].statusText}`);
+    }
+    return responses;
+  })
+  .then((responses) => {
+    return Promise.all(responses.map(r => r.json()));
+  })
+  .then((resJSONs) => {
+    // Профиль
+    settings.apiIdUser = resJSONs[0]['_id'];
+    editProfile(resJSONs[0], settings.bindProfile);
+    // Карты
+    initPlaces(resJSONs[1], false);
+  })
+  .catch((error) => {
+    showMessage('Ошибка при загрузке', error, 'Понятно'); // Ошибка при загрузке
+  });
 
 // 2. Инициализация модальных окон
 //    а. Окно "Редактировать профиль"

@@ -2,7 +2,6 @@
  Карты
  */
 
-
 /**
  * Создание карты
  *
@@ -11,15 +10,20 @@
  * @param {string} objectPlace.link URL картинки
  * @param {string} objectPlace[_id] Id картинки в URL
  * @param {Object} objectPlace.owner Id владельца карты
+ * @param {Object[]} objectPlace.likes Массив лайков
  * @param {DocumentFragment} cardTemplate Заготовка
  * @param {Object} settings Настройки
  * @param {Object} objectFunctions callback'и
  * @param {onDeleteCard} objectFunctions.onDeleteCard Функция удаления карты
  * @param {onOpenPreview} objectFunctions.onOpenPreview Функция показа картинки
  * @param {onLikeCard} objectFunctions.onLikeCard Функция лайка
+ * @param {deleteLike} objectFunctions.deleteLike Удаление лайка в API
+ * @param {setLike} objectFunctions.setLike Установка лайка в API
+ * @param {showMessage} objectFunctions.showMessage Показ сообщения об ошибке
  * @returns {HTMLElement} Карточка для размещения на странице
  */
-function createCard(objectPlace, cardTemplate, settings,
+
+export function createCard(objectPlace, cardTemplate, settings,
                     objectFunctions) {
   const newPlace = cardTemplate.querySelector(settings.classPlacesItem).cloneNode(true);
 
@@ -40,7 +44,7 @@ function createCard(objectPlace, cardTemplate, settings,
   }
   // Лайк карточки
   newPlace.querySelector(settings.classLikeButton)
-    .addEventListener('click', event => objectFunctions.onLikeCard(event, objectPlace['_id'], settings));
+    .addEventListener('click', event => objectFunctions.onLikeCard(event, objectPlace['_id'], objectFunctions, settings));
 
   // Обработать лайки
   initialLike(newPlace, objectPlace, settings);
@@ -52,9 +56,11 @@ function createCard(objectPlace, cardTemplate, settings,
  *
  * @param {HTMLElement} elementPlace Карта для загрузки лайков
  * @param {Object} objectPlace Данные карты
+ * @param {Object[]} objectPlace.likes Массив лайков
+ * @param {Object} objectPlace.owner Владелец карты
  * @param {Object} settings Настройки
  */
-export function initialLike(elementPlace, objectPlace, settings) {
+function initialLike(elementPlace, objectPlace, settings) {
   // Количество лайков
   const likesCount = objectPlace.likes.length;
   elementPlace.querySelector(settings.classLikesCount).textContent = likesCount.toString();
@@ -67,15 +73,44 @@ export function initialLike(elementPlace, objectPlace, settings) {
     likesTooltip.removeChild(child);
     child = likesTooltip.lastElementChild;
   }
-  const listItem = document.createElement('li');
+
+  // Владелец
+  let listItem = document.createElement('li');
   listItem.classList.add(settings.classTitleTooltip);
+  listItem.textContent = 'Владелец:';
+  likesTooltip.append(listItem);
+  listItem = document.createElement('li');
+  listItem.classList.add(settings.classItemTooltip, settings.classMarginTooltip);
+  // Аватар
+  const imageAvatar = document.createElement('img');
+  imageAvatar.classList.add(settings.classImageTooltip);
+  imageAvatar.setAttribute('src', objectPlace.owner.avatar);
+  imageAvatar.setAttribute('alt', `Владелец карты: ${objectPlace.owner.name}`);
+  listItem.append(imageAvatar);
+  // Имя
+  const spanName = document.createElement('span');
+  spanName.classList.add(settings.classTextTooltip);
+  spanName.textContent = objectPlace.owner.name;
+  listItem.setAttribute('margin-bottom', '10px');
+  listItem.append(spanName);
+  // Добавить в список Владельца
+  likesTooltip.append(listItem);
+
+  // Список лайков
+  const listItemTitle = document.createElement('li');
+  listItemTitle.classList.add(settings.classTitleTooltip);
   if (likesCount === 0) {
-    listItem.textContent = 'Увы, лайков нет...';
+    listItemTitle.textContent = 'Увы, лайков нет...';
+    // Добавить в список заголовок
+    likesTooltip.append(listItemTitle);
   } else {
-    listItem.textContent = 'Лайки этого места:';
+    listItemTitle.textContent = 'Лайки этого места:';
+    // Добавить в список заголовок
+    likesTooltip.append(listItemTitle);
     let addLike = 0;  // Сколько добавлено
     let overLike = 0; // Лишние лайки
     objectPlace.likes.forEach((like) => {
+      addLike++;
       // Свой лайк не потерять!
       if (like['_id'] === settings.apiIdUser) {
         elementPlace.querySelector(settings.classLikeButton).classList.add(settings.classLikeYesNotDot);
@@ -88,7 +123,7 @@ export function initialLike(elementPlace, objectPlace, settings) {
         const imageAvatar = document.createElement('img');
         imageAvatar.classList.add(settings.classImageTooltip);
         imageAvatar.setAttribute('src', like.avatar);
-        imageAvatar.setAttribute('alt', 'Установил лайк: ' + like.name);
+        imageAvatar.setAttribute('alt', `Установил лайк: ${like.name}`);
         listItem.append(imageAvatar);
         // Имя
         const spanName = document.createElement('span');
@@ -97,7 +132,6 @@ export function initialLike(elementPlace, objectPlace, settings) {
         listItem.append(spanName);
         // Добавить в список лайкнувшего (обожаю русский язык!)
         likesTooltip.append(listItem);
-        addLike++;
       } else {  // Уже лишние
         overLike++;
       }
@@ -109,19 +143,70 @@ export function initialLike(elementPlace, objectPlace, settings) {
       likesTooltip.append(listItem);
     }
   }
-  // Добавить в список заголовок
-  likesTooltip.prepend(listItem);
 }
+
+/**
+ * Поставить/снять лайк карты
+ * @callback onLikeCard
+ * @param {Event} event Событие 'click' на кнопке
+ * @param {String} idCard Id карты
+ * @param {Object} objectFunctions Функции
+ * @param {deleteLike} objectFunctions.deleteLike Функция API для удаления лайка
+ * @param {setLike} objectFunctions.setLike Функция API для установки лайка
+ * @param {showMessage} objectFunctions.showMessage Функция для выдачи сообщения об ошибке
+ * @param {Object} settings Настройки
+ */
+export function onLikeCard(event, idCard, objectFunctions, settings) {
+  if (event.target === null) return;
+
+  const elementCard = event.target.closest(settings.classPlacesItem);
+  const elementLike = event.target;
+  const data = {
+    id: idCard,
+    elementCard,
+    elementLike,
+  };
+  // Если лайк есть, то его надо снять, иначе поставить
+  let promiseLike, what;
+  if (event.target.classList.contains(settings.classLikeYesNotDot)) {
+    promiseLike = objectFunctions.deleteLike(data, settings);
+    what = 'снятии';
+  } else {
+    promiseLike = objectFunctions.setLike(data, settings);
+    what = 'установке';
+  }
+
+  promiseLike
+    .then((response) =>{
+      // Не всё так хорошо?
+      if (response.ok) {
+        return response.json();
+      }
+      return Promise.reject(`Ошибка при ${what} лайка:  ${response.status}, ${response.statusText}`)
+    })
+    .then((resJSON) => {
+      // Количество лайков
+      elementLike.parentElement.querySelector(settings.classLikesCount)
+        .textContent = resJSON['likes'].length.toString();
+      likeCard (elementLike, settings);
+      initialLike(elementCard, resJSON, settings);
+    })
+    .catch((error) => {
+      objectFunctions.showMessage(`Ошибка при ${what} лайка`, error, 'Понятно');
+    });
+}
+
 
 /**
  * Удаление карты
  *
- * @param {HTMLElement} cardDelete Карта для удаления
+ * @param {Object} data Общие данные
+ * @param {HTMLElement} data.elementPlace Карта для удаления
  */
-export function removeCard(cardDelete) {
-  if (cardDelete === null) return;
+export function removeCard(data) {
+  if (data.elementPlace === null) return;
 
-  cardDelete.remove();                 // Можно удалять!
+  data.elementPlace.remove();                 // Можно удалять!
 }
 
 /**
@@ -129,40 +214,6 @@ export function removeCard(cardDelete) {
  * @param {HTMLElement} elementLike Кнопка лайка
  * @param {Object} settings Настройки
  */
-export function likeCard (elementLike, settings) {
+function likeCard (elementLike, settings) {
   elementLike.classList.toggle(settings.classLikeYesNotDot);
-}
-
-/**
- * Вывести карты на страницу
- *
- * @param {Object[]} initCards Массив описаний карт
- * @param {string} initCards.name Наименование Места
- * @param {string} initCards.link URL картинки
- * @param {string} initCards.owner Владелец карты
- * @param {Object} settings Настройки
- * @param {boolean} addToBegin Создавать карты в начале
- * @param {DocumentFragment} cardTemplate Заготовка
- * @param {Element} placesContainer Место для укладки карт
- * @param {onOpenPreview} onOpenPreview Функция для просмотра изображения
- * @param {onDeleteCard} onDeleteCard Функция для удаления карты
- * @param {onLikeCard} onLikeCard Функция для постановки/снятия лайка
- */
-export function initPlaces(initCards, settings, addToBegin,
-                           {cardTemplate,
-                            placesContainer,
-                            onOpenPreview,
-                            onDeleteCard,
-                            onLikeCard,
-                           } = {}) {
-  const objFunction = {
-    onDeleteCard,
-    onOpenPreview,
-    onLikeCard
-  };
-  initCards.forEach(function (item) {
-    let newPlace = createCard(item, cardTemplate, settings, objFunction);
-    if (addToBegin) placesContainer.prepend(newPlace)
-    else placesContainer.append(newPlace);
-  });
 }

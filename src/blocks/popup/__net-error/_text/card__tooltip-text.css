@@ -1,0 +1,6 @@
+.card__tooltip-text {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  margin-left: 5px;
+}

@@ -46,6 +46,13 @@ export function setModalWindowEventListeners(elementWindow, settings, objListene
   // Для снятия открытого окна по клику вне окна
   elementWindow
     .addEventListener('mouseup', event => objListener.closeUp(event, elementWindow, objListener.closeUp));
+  // Для снятия сетевой ошибки
+  const elementNetError = elementWindow.querySelector(settings.classNetError);
+  if (elementNetError !== null) {
+    elementNetError.querySelector(settings.classNetErrorClose).addEventListener('click', () => {
+      elementNetError.classList.remove(settings.classNetErrorShow);
+    });
+  }
 }
 
 /**

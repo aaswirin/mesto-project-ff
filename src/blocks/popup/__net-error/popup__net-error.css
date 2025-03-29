@@ -1,0 +1,41 @@
+.popup__net-error {
+  display: none;
+  background: wheat;
+  padding: 10px;
+  left: 35px;
+  top: 60px;
+  width: 80%;
+  position: absolute;
+  font-size: 14px;
+  z-index: 100;
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+  border: 1px solid black;
+}
+
+.popup__net-error-show {
+  display: block;
+}
+
+.popup__net-error-close {
+  background: black url('../../../images/close.svg') 50% center no-repeat;
+  background-size: cover;
+  border: black 3px solid;
+  cursor: pointer;
+  height: 15px;
+  width: 15px;
+  top: 5px;
+  right: 5px;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  -webkit-border-radius: 50%;
+  -moz-border-radius: 50%;
+  border-radius: 50%;
+}
+
+.popup__net-error-message {
+  font-size: 12px;
+  color: red;
+}
